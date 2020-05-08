@@ -297,6 +297,7 @@ void sys(long int *op1, long int *op2, long int reg[], long int ram[])
                 printf("[%04d]:",(reg[13]));
             }
             i=0;
+            fflush(stdin);
             while ((auxc!=0x0A) && (i<reg[12]))
             {
                 scanf("%c",&auxc);
