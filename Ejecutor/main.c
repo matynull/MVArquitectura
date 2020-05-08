@@ -56,7 +56,7 @@ void LeerBinario(long int reg[], long int ram[], int argc, char *argv[])
 {
     int i;
     FILE *Arch;
-    Arch=fopen("imagenMemoria.img","rb");
+    Arch=fopen("acordarsedecambiar.img","rb");
     //Arch=fopen(argv[1],"rb");
     if (Arch!=NULL)
     {
