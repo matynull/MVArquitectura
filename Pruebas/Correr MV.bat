@@ -1,0 +1,1 @@
+cmd /K mvx.exe imagenMemoria.img

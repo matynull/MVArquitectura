@@ -1,0 +1,2 @@
+Todos los .bat usan programa.asm como código fuente assembler e imagenMemoria.img como archivo imagen.
+En la misma carpeta tienen que estar los .exe compilados con la última versión de cada main.c

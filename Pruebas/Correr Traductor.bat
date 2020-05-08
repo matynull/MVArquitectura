@@ -1,0 +1,1 @@
+cmd /K mvc.exe programa.asm imagenMemoria.img

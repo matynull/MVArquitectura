@@ -1,0 +1,1 @@
+cmd /K mvdump.exe imagenMemoria.img
