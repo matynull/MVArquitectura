@@ -6,7 +6,7 @@
 
 typedef struct
 {
-    char mnemonico[5], arg1[10], arg2[10];
+    char mnemonico[5], arg1[20], arg2[20];
 } TInstruccionTexto;
 
 typedef struct
@@ -17,7 +17,7 @@ typedef struct
 
 typedef struct
 {
-    char segBase[4], reg[3], const[10];
+    char segBase[3], reg[3], const[10];
     int signo, decimal;
 } TOpInd;
 
@@ -172,7 +172,7 @@ void generarTraduccion(char* mnemonicos[], int* contMnemonicos, char* indiceRegi
     strcpy(indiceRegistros[1],"CS");
     strcpy(indiceRegistros[2],"DS");
     strcpy(indiceRegistros[3],"ES");
-    strcpy(indiceRegistros[4],"IP");
+    strcpy(indiceRegistros[4],"IP");retorno += reg;
     strcpy(indiceRegistros[5],"SS");
     strcpy(indiceRegistros[6],"SP");
     strcpy(indiceRegistros[7],"BP");
@@ -250,35 +250,42 @@ long traducirMnemonico(char* mnemonicos[], int contMnemonicos, char arg[])
 
 void argumentoGenerico(TRam ram, int i, char argumento[], TRotulo rotulos[], int contRotulos, TConstante constantes[], int contConstantes, char* indiceRegistros[], int* huboError, int numArg)
 {
-    char aux[4], car;
+    char* token;
+    char aux[4], aux2[20], car;
     int k = 0, j;
-    if (argumento[0] == '[') //Es direccion de memoria
+    if (argumento[0] == '[')
     {
-        ram[i*3] += 2;
-        if (argumento[1] == 'E')
+        if (esDirecto) //Es operando directo
+        /*if ((argumento[1] >= 47 && argumento[1] <= 57) || (argumento[4] >= 47 && argumento[4] <= 57))
         {
-            j = 4;
-            ram[i*3+numArg] = 3;
-        }
-        else
-            if (argumento[1] == 'D')
+            ram[i*3] += 2;
+            strcpy(aux2,argumento);
+            token = strtok(aux2,"[]");
+            if (token[2] == ':')
+            if (argumento[1] == 'E')
             {
-                j = 4;
-                ram[i*3+numArg] = 2;
+                j = 3;
+                ram[i*3+numArg] = 3;
             }
             else
-            {
-                j = 1;
-                ram[i*3+numArg] = 2;
-            }
-        while (j < strlen(argumento) && argumento[j] != ']')
+                if (argumento[1] == 'D')
+                {
+                    j = 3;
+                    ram[i*3+numArg] = 2;
+                }
+                else
+                {
+                    j = 0;
+                    ram[i*3+numArg] = 2;
+                }
+            aux[k] = '\0';
+            ram[i*3+numArg] = (ram[i*3+numArg] << 28) + atoi(aux);
+        }*/
+        else //Es operando indirecto
         {
-            aux[k] = argumento[j];
-            j++;
-            k++;
+            ram[i*3] += 3;
+            ram[i*3+numArg] = operandoIndirecto(constantes,contConstantes,argumento);
         }
-        aux[k] = '\0';
-        ram[i*3+numArg] = (ram[i*3+numArg] << 28) + atoi(aux);
     }
     else
     {
@@ -294,7 +301,7 @@ void argumentoGenerico(TRam ram, int i, char argumento[], TRotulo rotulos[], int
                     printf("ERROR: No se encontro el registro %s\n\t\t\t\t",argumento);
                 }
             }
-            else //Es directo, rotulo
+            else //Es inmediato, rotulo o constante //EVALUAR SI ES CONSTANTE O ROTULO
             {
                 ram[i*3+numArg] = traducirRotulo(rotulos,contRotulos,argumento);
                 if (ram[i*3+numArg] == 0xFFFFFFFF)
@@ -304,7 +311,7 @@ void argumentoGenerico(TRam ram, int i, char argumento[], TRotulo rotulos[], int
                 }
             }
         }
-        else //Es directo, no rotulo
+        else //Es inmediato, no rotulo ni constante
         {
             j = 1;
             if  (argumento[0] >= '0' && argumento[0] <= '9') //Es decimal
@@ -363,7 +370,92 @@ int traducirRotulo(TRotulo rotulos[], int contRotulos, char rotulo[])
         return -1;
 }
 
-void operandoIndirecto(TConstante constantes[], int contConstantes ,char arg[])
+int traducirConstante(TConstante constantes[], int contConstantes, char arg[])
 {
+    int i = 0;
+    while (i < contConstantes && strcmp(arg,constantes[i].constante) != 0)
+        i++;
+    if (i < contConstantes)
+        return constantes[i].celda;
+    else
+        return -1;
+}
 
+long operandoIndirecto(TConstante constantes[], int contConstantes, char* indiceRegistros[], char arg[])
+{
+    int signo = 1;
+    long retorno = 0;
+    char* token;
+    char aux[20];
+    int aux2;
+    strcpy(aux,arg);
+    token = strtok(aux,"[:");
+    if (token[strlen(token)-1] == ']') //No se especifica registro base
+    {
+        if (token[2] == '-')
+            signo = -1;
+        token = strtok(aux,"+-");
+        if (token[strlen(token)-1] != ']')
+        {
+            aux2 = traducirRegistro(indiceRegistros,token);
+            if (aux2 == -1 || (aux2 >= 1 && aux2 <= 5) || aux2 == 9)
+                retorno = -1;
+            else
+            {
+                retorno += aux2;
+                if (aux2 == 6 || aux2 == 7)
+                    retorno += 5 << 28;
+                else
+                    retorno += 2 << 28;
+            }
+            token = strtok(NULL,"]");
+        }
+        else
+            token = strtok(token,"]");
+        if (token[0] >= 47 && token[0] <= 57)
+            retorno += (signo * atoi(token)) << 4;
+        else
+        {
+            aux2 = traducirConstante(constantes,contConstantes,token);
+            if (aux2 == -1)
+                retorno = -1;
+            else
+                retorno += (signo * aux2) << 4;
+        }
+    }
+    else //Se especifica registro base
+    {
+        retorno = traducirRegistro(indiceRegistros,token);
+        if ((retorno >= 1 && retorno <= 3) || (retorno == 5))
+        {
+            retorno = retorno << 28;
+            if (aux[token] == '-')
+                signo = -1;
+            token = strtok(NULL,"+-");
+            if (token[strlen(token)-1] != ']')
+            {
+                aux2 = traducirRegistro(indiceRegistros,token);
+                if (aux2 == -1 || (aux2 >= 1 && aux2 <= 5) || aux2 == 9)
+                    retorno = -1;
+                else
+                    retorno += aux2;
+                token = strtok(NULL,"]");
+            }
+            else
+                token = strtok(token,"]");
+            if (token[0] >= 47 && token[0] <= 57) //Esto se puede sacar de factor comun
+                retorno += (signo * atoi(token)) << 4;
+            else
+            {
+                aux2 = traducirConstante(constantes,contConstantes,token);
+                if (aux2 == -1)
+                    retorno = -1;
+                else
+                    retorno += (signo * aux2) << 4;
+            }
+        }
+        else
+            retorno = -1;
+    }
+    return retorno;
 }
