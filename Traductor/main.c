@@ -9,6 +9,18 @@ typedef struct
     char mnemonico[5], arg1[10], arg2[10];
 } TInstruccionTexto;
 
+typedef struct
+{
+    int celda;
+    char constante[10];
+} TConstante;
+
+typedef struct
+{
+    char segBase[4], reg[3], const[10];
+    int signo, decimal;
+} TOpInd;
+
 void generarTraduccion(char* mnemonicos[], int* contMnemonicos, char* indiceRegistros[]);
 
 void primeraPasada(FILE* archEnt, TRotulo rotulos[], int* contRotulos, TInstruccionTexto instrucciones[], int* contLinea);
@@ -29,10 +41,11 @@ int main(int argc, char *argv[])
     TRam ram = {0};
     TRotulo rotulos[100];
     TInstruccionTexto instruccionesTexto[100];
+    TConstante constantes[30];
     char* mnemonicos[255];
     char* indiceRegistros[16];
     long codMaq;
-    int contRotulos, contLinea, contMnemonicos, i = 0, huboError = 0, output = 1;
+    int contRotulos, contLinea, contMnemonicos, contConstantes, i = 0, huboError = 0, output = 1;
     char aux[4], linea[100];
     FILE* archEnt;
     FILE* archSalida;
@@ -70,12 +83,17 @@ int main(int argc, char *argv[])
                     ram[i*3+1] = atoi(instruccionesTexto[i].arg1);
                 }
                 else
-                {
-                    ram[i*3] = (codMaq << 8);
-                    argumentoGenerico(ram,i,instruccionesTexto[i].arg1,rotulos,contRotulos,indiceRegistros,&huboError,1);
-                    if (codMaq != 0x33 && codMaq != 0x20 && (codMaq < 24 || codMaq > 29))
-                        argumentoGenerico(ram,i,instruccionesTexto[i].arg2,rotulos,contRotulos,indiceRegistros,&huboError,2);
-                }
+                    if (codMaq == 0x48)
+                    {
+                        ram[i*3] = codMaq << 16;
+                    }
+                    else
+                    {
+                        ram[i*3] = (codMaq << 8);
+                        argumentoGenerico(ram,i,instruccionesTexto[i].arg1,rotulos,contRotulos,constantes,contConstantes,indiceRegistros,&huboError,1);
+                        if (codMaq != 0x20 && codMaq != 0x33 && (codMaq < 24 || codMaq > 29) && codMaq != 0x40 && codMaq != 0x44 && codMaq != 0x45)
+                            argumentoGenerico(ram,i,instruccionesTexto[i].arg2,rotulos,contRotulos,constantes,contConstantes,indiceRegistros,&huboError,2);
+                    }
         }
         i++;
     }
@@ -122,12 +140,6 @@ void generarTraduccion(char* mnemonicos[], int* contMnemonicos, char* indiceRegi
     strcpy(mnemonicos[0x13],"CMP");
     strcpy(mnemonicos[0x17],"SWAP");
     strcpy(mnemonicos[0x19],"RND");
-    strcpy(mnemonicos[0x31],"AND");
-    strcpy(mnemonicos[0x32],"OR");
-    strcpy(mnemonicos[0x33],"NOT");
-    strcpy(mnemonicos[0x34],"XOR");
-    strcpy(mnemonicos[0x37],"SHL");
-    strcpy(mnemonicos[0x38],"SHR");
     strcpy(mnemonicos[0x20],"JMP");
     strcpy(mnemonicos[0x21],"JE");
     strcpy(mnemonicos[0x22],"JG");
@@ -138,6 +150,19 @@ void generarTraduccion(char* mnemonicos[], int* contMnemonicos, char* indiceRegi
     strcpy(mnemonicos[0x27],"JNZ");
     strcpy(mnemonicos[0x28],"JNP");
     strcpy(mnemonicos[0x29],"JNN");
+    strcpy(mnemonicos[0x31],"AND");
+    strcpy(mnemonicos[0x32],"OR");
+    strcpy(mnemonicos[0x33],"NOT");
+    strcpy(mnemonicos[0x34],"XOR");
+    strcpy(mnemonicos[0x37],"SHL");
+    strcpy(mnemonicos[0x38],"SHR");
+    strcpy(mnemonicos[0x40],"CALL");
+    strcpy(mnemonicos[0x44],"PUSH");
+    strcpy(mnemonicos[0x45],"POP");
+    strcpy(mnemonicos[0x48],"RET");
+    strcpy(mnemonicos[0x50],"SLEN");
+    strcpy(mnemonicos[0x51],"SMOV");
+    strcpy(mnemonicos[0x53],"SCMP");
     strcpy(mnemonicos[0x81],"SYS");
     strcpy(mnemonicos[0x8F],"STOP");
 
@@ -223,7 +248,7 @@ long traducirMnemonico(char* mnemonicos[], int contMnemonicos, char arg[])
         return -1;
 }
 
-void argumentoGenerico(TRam ram, int i, char argumento[], TRotulo rotulos[], int contRotulos, char* indiceRegistros[], int* huboError, int numArg)
+void argumentoGenerico(TRam ram, int i, char argumento[], TRotulo rotulos[], int contRotulos, TConstante constantes[], int contConstantes, char* indiceRegistros[], int* huboError, int numArg)
 {
     char aux[4], car;
     int k = 0, j;
@@ -283,7 +308,7 @@ void argumentoGenerico(TRam ram, int i, char argumento[], TRotulo rotulos[], int
         {
             j = 1;
             if  (argumento[0] >= '0' && argumento[0] <= '9') //Es decimal
-               ram[i*3+numArg] = atoi(argumento);
+                ram[i*3+numArg] = atoi(argumento);
             else
                 if (argumento[0] == '#') //Es decimal
                 {
@@ -336,4 +361,9 @@ int traducirRotulo(TRotulo rotulos[], int contRotulos, char rotulo[])
         return rotulos[i].linea;
     else
         return -1;
+}
+
+void operandoIndirecto(TConstante constantes[], int contConstantes ,char arg[])
+{
+
 }
