@@ -1,8 +1,4 @@
-#define CS 0
-#define DS 500
-#define ES 1000
-
-typedef long TRam[2000];
+typedef long TRam[8176]; //O 8192???
 
 typedef long TRegistros[16];
 

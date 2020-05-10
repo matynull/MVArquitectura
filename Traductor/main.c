@@ -6,18 +6,18 @@
 
 typedef struct
 {
-    char mnemonico[5], arg1[20], arg2[20];
+    char mnemonico[11], arg1[20], arg2[20];
 } TInstruccionTexto;
 
 typedef struct
 {
-    int celda;
-    char constante[10];
+    int valor, directa;
+    char constante[11], string[18];
 } TConstante;
 
 void generarTraduccion(char* mnemonicos[], int* contMnemonicos, char* indiceRegistros[]);
 
-void primeraPasada(FILE* archEnt, TRotulo rotulos[], int* contRotulos, TInstruccionTexto instrucciones[], int* contLinea);
+void primeraPasada(FILE* archEnt, TRotulo rotulos[], int* contRotulos, TConstante constantes[], int* contConstantes, TInstruccionTexto instrucciones[], int* contLinea, TRegistros registros, char* indiceRegistros[], int* huboError, TRam ram);
 
 void mostrarRotulos(TRotulo rotulos[], int cant);
 
@@ -33,6 +33,8 @@ int traducirConstante(TConstante constantes[], int contConstantes, char arg[]);
 
 long operandoDirectoOIndirecto(TConstante constantes[], int contConstantes, char* indiceRegistros[], char arg[], int indirecto);
 
+long operandoInmediato(char argumento[]);
+
 int main(int argc, char *argv[])
 {
     TRegistros registros = {0};
@@ -44,7 +46,7 @@ int main(int argc, char *argv[])
     char* indiceRegistros[16];
     long codMaq;
     int contRotulos, contLinea, contMnemonicos, contConstantes, i = 0, huboError = 0, output = 1;
-    char aux[4], linea[100];
+    char linea[100];
     FILE* archEnt;
     FILE* archSalida;
     archEnt = fopen(argv[1],"rt");
@@ -54,7 +56,7 @@ int main(int argc, char *argv[])
         return 1;
     }
     generarTraduccion(mnemonicos, &contMnemonicos, indiceRegistros);
-    primeraPasada(archEnt,rotulos,&contRotulos,instruccionesTexto,&contLinea);
+    primeraPasada(archEnt,rotulos,&contRotulos,constantes,&contConstantes,instruccionesTexto,&contLinea,registros,indiceRegistros,&huboError,ram);
     //mostrarRotulos(rotulos,contRotulos); //COMENTAR ESTO
     registros[2] = contLinea * 3;
     registros[3] = 1000;
@@ -62,7 +64,6 @@ int main(int argc, char *argv[])
         output=0;
     while (i < contLinea)
     {
-        strcpy(aux,"   ");
         codMaq = traducirMnemonico(mnemonicos,contMnemonicos,instruccionesTexto[i].mnemonico);
         if (codMaq == -1)
         {
@@ -112,7 +113,7 @@ int main(int argc, char *argv[])
     {
         archSalida = fopen(argv[2],"wb");
         fwrite(registros,sizeof(long),16,archSalida);
-        fwrite(ram,sizeof(long),2000,archSalida);
+        fwrite(ram,sizeof(long),2000,archSalida); //registros[2]
         fclose(archSalida);
     }
     system("pause");
@@ -184,49 +185,147 @@ void generarTraduccion(char* mnemonicos[], int* contMnemonicos, char* indiceRegi
     strcpy(indiceRegistros[15],"FX");
 }
 
-void primeraPasada(FILE* archEnt, TRotulo rotulos[], int* contRotulos,  TInstruccionTexto instrucciones[], int* contLinea)
+void primeraPasada(FILE* archEnt, TRotulo rotulos[], int* contRotulos, TConstante constantes[], int* contConstantes, TInstruccionTexto instrucciones[], int* contLinea, TRegistros registros, char* indiceRegistros[], int* huboError, TRam ram)
 {
-    char linea[100], aux[100], *token;
-    (*contLinea) = (*contRotulos) = 0;
+    int DS=500,ES=500,SP=500,i,j,k,tamanoConstantes = 0;
+    char linea[100], aux[100], *auxReg, *auxTam, *token;
+    (*contLinea) = (*contRotulos) = (*contConstantes) = 0;
     while (fgets(linea,100,archEnt) != NULL)
     {
         if (linea[0] != '\n' && linea[0] != '/')
         {
-            (*contLinea)++;
-            strcpy(aux,linea);
-            token = strtok(linea," \t\n,/");
-            if (token[strlen(token)-1] == ':')
+            if (linea[0] == '\\') //La linea es una directiva
             {
-                token[strlen(token)-1] = '\0';
-                rotulos[*contRotulos].linea = (*contLinea);
-                strcpy(rotulos[*contRotulos].rotulo,strupr(token));
-                (*contRotulos)++;
-                token = strtok(NULL," \t\n,/");
-            }
-            if (token != NULL)
-            {
-                strcpy(instrucciones[(*contLinea)-1].mnemonico,strupr(token));
-                token = strtok(NULL," \t\n,/");
-                if (token != NULL)
+                strcpy(aux,linea);
+                token = strtok(aux," \t\n/");
+                while(token != NULL)
                 {
-                    if (token[0] == '\'')
-                        strcpy(instrucciones[(*contLinea)-1].arg1,token);
-                    else
-                        strcpy(instrucciones[(*contLinea)-1].arg1,strupr(token));
-                    token = strtok(NULL," \t\n,/");
-                    if (token != NULL)
-                        if (token[0] == '\'')
-                            strcpy(instrucciones[(*contLinea)-1].arg2,token);
-                        else
-                            strcpy(instrucciones[(*contLinea)-1].arg2,strupr(token));
+                    auxReg = token = strtok(NULL," =/");
+                    auxTam = token = strtok(NULL," =/");
+                    switch (traducirRegistro(indiceRegistros,auxReg))
+                    {
+                    case 2:
+                        DS = atoi(auxTam);
+                        break;
+                    case 3:
+                        ES = atoi(auxTam);
+                        break;
+                    case 6:
+                        SP = atoi(auxTam);
+                        break;
+                    }
                 }
             }
-            //COMENTAR ESTO
-            //printf("\n|%s|%s|%s|\n",instrucciones[(*contLinea)-1].mnemonico,instrucciones[(*contLinea)-1].arg1,instrucciones[(*contLinea)-1].arg2); //Muestra los componentes de la instruccion de cada linea
+            else //La linea es una instruccion o una constante
+            {
+                (*contLinea)++;
+                strcpy(aux,linea);
+                token = strtok(linea," \t\n,/");
+                if (token[strlen(token)-1] == ':') //Hay rotulo
+                {
+                    token[strlen(token)-1] = '\0';
+                    if (traducirRotulo(rotulos,*contRotulos,strupr(token)) == -1)
+                    {
+                        *huboError = 1;
+                        printf("ERROR: Ya existe el rotulo %s\n\t\t\t\t",strupr(token));
+                    }
+                    else //No existia como rotulo
+                    {
+                        if (traducirConstante(constantes,*contConstantes,strupr(token)) == -32000)
+                        {
+                            *huboError = 1;
+                            printf("ERROR: Ya existe la constante %s\n\t\t\t\t",strupr(token));
+                        }
+                        else //No existia como rotulo ni como constante
+                        {
+                            rotulos[*contRotulos].linea = (*contLinea);
+                            strcpy(rotulos[*contRotulos].rotulo,strupr(token));
+                            (*contRotulos)++;
+                        }
+                    }
+                    token = strtok(NULL," \t\n,/");
+                }
+                if (token != NULL)
+                {
+                    strcpy(instrucciones[(*contLinea)-1].mnemonico,strupr(token));
+                    token = strtok(NULL," \t\n,/");
+                    if (token != NULL)
+                    {
+                        if (token[0] == '\'')
+                            strcpy(instrucciones[(*contLinea)-1].arg1,token);
+                        else
+                            strcpy(instrucciones[(*contLinea)-1].arg1,strupr(token));
+                        token = strtok(NULL," \t\n,/");
+                        if (token != NULL)
+                            if (token[0] == '\'' || token[0] == '\"')
+                                strcpy(instrucciones[(*contLinea)-1].arg2,token);
+                            else
+                                strcpy(instrucciones[(*contLinea)-1].arg2,strupr(token));
+                    }
+                }
+                if (strcmp(instrucciones[(*contLinea)-1].arg1,"EQU") == 0) //La linea declara una constante
+                {
+                    if (traducirRotulo(rotulos,*contRotulos,instrucciones[(*contLinea)-1].mnemonico) == -1)
+                    {
+                        *huboError = 1;
+                        printf("ERROR: Ya existe el rotulo %s\n\t\t\t\t",instrucciones[(*contLinea)-1].mnemonico);
+                    }
+                    else //No existia como rotulo
+                    {
+                        if (traducirConstante(constantes,*contConstantes,instrucciones[(*contLinea)-1].mnemonico) == -32000)
+                        {
+                            *huboError = 1;
+                            printf("ERROR: Ya existe la constante %s\n\t\t\t\t",instrucciones[(*contLinea)-1].mnemonico);
+                        }
+                        else //No existia como rotulo ni como constante
+                        {
+                            if (instrucciones[(*contLinea)-1].arg2[0] == '"') //La constante es un String
+                            {
+                                constantes[*contConstantes].directa = 0;
+                                strcpy(constantes[*contConstantes].string,strtok(instrucciones[(*contLinea)-1].arg2,"\""));
+                                constantes[*contConstantes].valor = 0;
+                            }
+                            else //La constante es inmediata
+                            {
+                                constantes[*contConstantes].directa = 1;
+                                constantes[*contConstantes].valor = operandoInmediato(instrucciones[(*contLinea)-1].arg2);
+                            }
+                            strcpy(constantes[*contConstantes].constante,instrucciones[(*contLinea)-1].mnemonico);
+                            (*contConstantes)++;
+                            (*contLinea)--;
+                        }
+                    }
+                }
+                //COMENTAR ESTO
+                //printf("\n|%s|%s|%s|\n",instrucciones[(*contLinea)-1].mnemonico,instrucciones[(*contLinea)-1].arg1,instrucciones[(*contLinea)-1].arg2); //Muestra los componentes de la instruccion de cada linea
+            }
         }
     }
+    k = (*contLinea) * 3;
+    for (i=0; i<(*contConstantes); i++)
+        if (constantes[i].directa != 1)
+        {
+            constantes[i].valor = k;
+            for (j=0; j<=strlen(constantes[i].string); j++)
+            {
+                tamanoConstantes++;
+                ram[k++] = constantes[i].string[j];
+            }
+        }
+    registros[2] = (*contLinea) * 3 + tamanoConstantes;
+    if (ES != -1)
+    {
+        registros[3] = registros[2] + DS;
+        registros[5] = registros[3] + ES;
+    }
+    else
+    {
+        registros[3] = -1;
+        registros[5] = registros[2] + DS;
+    }
+    registros[6] = SP;
+    registros[0] = registros[5] + registros[6];
 }
-
 
 void mostrarRotulos(TRotulo rotulos[], int cant)
 {
@@ -250,21 +349,20 @@ void argumentoGenerico(TRam ram, int i, char argumento[], TRotulo rotulos[], int
 {
     int esDirecto;
     char* token;
-    char aux[4], aux2[20], aux3[20], car;
-    int k = 0, j;
+    char aux[20], aux2[20];
     if (argumento[0] == '[')
     {
-        strcpy(aux2,argumento);
+        strcpy(aux,argumento);
         esDirecto = (argumento[1] >= 48 && argumento[1] <= 57);
         esDirecto |= (argumento[3] == ':' && argumento[4] >= 48 && argumento[4] <= 57);
         if (!esDirecto)
         {
-            token = strtok(aux2,"[]:+-");
-            strcpy(aux3,token);
+            token = strtok(aux,"[]:+-");
+            strcpy(aux2,token);
             token = strtok(NULL,"[]:+-");
             if (token == NULL)
             {
-                if (traducirRegistro(indiceRegistros,aux3) == -1)
+                if (traducirRegistro(indiceRegistros,aux2) == -1)
                     esDirecto = 1;
             }
             else
@@ -301,48 +399,22 @@ void argumentoGenerico(TRam ram, int i, char argumento[], TRotulo rotulos[], int
                     printf("ERROR: No se encontro el registro %s\n\t\t\t\t",argumento);
                 }
             }
-            else //Es inmediato, rotulo o constante //EVALUAR SI ES CONSTANTE O ROTULO
+            else //Es inmediato, rotulo o constante
             {
                 ram[i*3+numArg] = traducirRotulo(rotulos,contRotulos,argumento);
                 if (ram[i*3+numArg] == 0xFFFFFFFF)
                 {
-                    *huboError = 1;
-                    printf("ERROR: No se encontro el rotulo %s\n\t\t\t\t",argumento);
+                    ram[i*3+numArg] = traducirConstante(constantes,contConstantes,argumento);
+                    if (ram[i*3+numArg] == 0xFFFFFFFF)
+                    {
+                        *huboError = 1;
+                        printf("ERROR: No se encontro el rotulo %s\n\t\t\t\t",argumento);
+                    }
                 }
             }
         }
         else //Es inmediato, no rotulo ni constante
-        {
-            j = 1;
-            if  (argumento[0] >= '0' && argumento[0] <= '9') //Es decimal
-                ram[i*3+numArg] = atoi(argumento);
-            else
-                if (argumento[0] == '#') //Es decimal
-                {
-                    argumento[0] = '0';
-                    ram[i*3+numArg] = atoi(argumento);
-                }
-                else
-                    if (argumento[0] == '\'') //Es caracter
-                        ram[i*3+numArg] = argumento[1];
-                    else
-                        if (argumento[0] == '@') //Es octal
-                            for(k=strlen(argumento)-2; k>=0; k--)
-                            {
-                                car = argumento[j++] - 48;
-                                ram[i*3+numArg] = (ram[i*3+numArg]<<3) + (car & 0x7);
-                            }
-                        else //Es hexadecimal
-                            for(k=strlen(argumento)-2; k>=0; k--)
-                            {
-                                car = argumento[j++];
-                                if (car <= '9')
-                                    car -= 48;
-                                else
-                                    car -= 55;
-                                ram[i*3+numArg] = (ram[i*3+numArg]<<4) + (car & 0xF);
-                            }
-        }
+            ram[i*3+numArg] = operandoInmediato(argumento);
     }
     if (numArg == 1)
         ram[i*3] = ram[i*3] << 8;
@@ -376,9 +448,9 @@ int traducirConstante(TConstante constantes[], int contConstantes, char arg[])
     while (i < contConstantes && strcmp(arg,constantes[i].constante) != 0)
         i++;
     if (i < contConstantes)
-        return constantes[i].celda;
+        return constantes[i].valor;
     else
-        return -1;
+        return -32000;
 }
 
 long operandoDirectoOIndirecto(TConstante constantes[], int contConstantes, char* indiceRegistros[], char arg[], int indirecto)
@@ -386,76 +458,101 @@ long operandoDirectoOIndirecto(TConstante constantes[], int contConstantes, char
     int signo = 1;
     long retorno = 0;
     char* token;
-    char aux[20];
-    int aux2;
+    char aux[20],aux2[20];
+    int hayReg = 0, reg1, reg2 = 0, reg3, constante;
     strcpy(aux,arg);
-    token = strtok(aux,"[:");
-    if (token[strlen(token)-1] == ']') //No se especifica registro base
+    strcpy(aux2,aux);
+    token = strtok(aux,"[:"); //Busca hasta el primer :
+    if (token[strlen(token)-1] != ']') //Se especifica registro base
     {
-        if (token[2] == '-')
+        hayReg = 1;
+        reg1 = traducirRegistro(indiceRegistros,token);
+        if (strlen(aux2) >= 7 && aux2[6] == '-')
             signo = -1;
-        token = strtok(aux,"+-");
-        if (token[strlen(token)-1] != ']')
-        {
-            aux2 = traducirRegistro(indiceRegistros,token);
-            if (aux2 == -1 || (aux2 >= 1 && aux2 <= 5) || aux2 == 9)
-                retorno = -1;
-            else
-            {
-                retorno += aux2;
-                if (aux2 == 6 || aux2 == 7)
-                    retorno += 5 << 28;
-                else
-                    retorno += 2 << 28;
-            }
-            token = strtok(NULL,"]");
-        }
-        else
-            token = strtok(token,"]");
-        if (token[0] >= 47 && token[0] <= 57)
-            retorno += (signo * atoi(token)) << (4 * indirecto);
-        else
-        {
-            aux2 = traducirConstante(constantes,contConstantes,token);
-            if (aux2 == -1)
-                retorno = -1;
-            else
-                retorno += (signo * aux2) << (4 * indirecto);
-        }
+        token = strtok(NULL,"+-");
     }
-    else //Se especifica registro base
+    else //No se especifica registro base
     {
-        retorno = traducirRegistro(indiceRegistros,token);
-        if ((retorno >= 1 && retorno <= 3) || (retorno == 5))
+        if (strlen(token) >= 3 && token[2] == '-')
+            signo = -1;
+        token = strtok(token,"+-");
+    }
+    if (token[strlen(token)-1] != ']') //Hay suma o resta
+    {
+        reg2 = traducirRegistro(indiceRegistros,token);
+        if (reg2 == -1 || (reg2 >= 1 && reg2 <= 5) || reg2 == 9)
+            retorno = -1;
+        else
+            retorno = reg2;
+        token = strtok(NULL,"]");
+    }
+    else //No hay suma ni resta
+        token = strtok(token,"]");
+    if (retorno != -1)
+        if (token[0] >= 48 && token[0] <= 57) //El primer caracter del token es un numero
+            retorno += (signo * atoi(token)) << (4 * indirecto);
+        else //El primer caracter del token no es un numero
         {
-            retorno = retorno << 28;
-            if (token[2] == '-')
-                signo = -1;
-            token = strtok(NULL,"+-");
-            if (token[strlen(token)-1] != ']') //Hay suma o resta
+            reg3 = traducirRegistro(indiceRegistros,token);
+            if (reg3 != -1) //El token era un registro
             {
-                aux2 = traducirRegistro(indiceRegistros,token);
-                if (aux2 == -1 || (aux2 >= 1 && aux2 <= 5) || aux2 == 9)
-                    retorno = -1;
-                else
-                    retorno += aux2;
-                token = strtok(NULL,"]");
+                reg2 = reg3;
+                retorno += reg2;
             }
-            else //No hay suma ni resta
-                token = strtok(token,"]");
-            if (token[0] >= 47 && token[0] <= 57) //Esto se puede sacar de factor comun
-                retorno += (signo * atoi(token)) << (4 * indirecto);
-            else
+            else //El token era una constante
             {
-                aux2 = traducirConstante(constantes,contConstantes,token);
-                if (aux2 == -1)
+                constante = traducirConstante(constantes,contConstantes,token);
+                if (constante == -32000)
                     retorno = -1;
                 else
-                    retorno += (signo * aux2) << (4 * indirecto);
+                    retorno += (signo * constante) << (4 * indirecto);
             }
         }
+    if (!hayReg) //Si no hay registro base busca el default en base al registro 2
+        if (reg2 == 6 || reg2 == 7)
+            reg1 = 5;
         else
-            retorno = -1;
-    }
+            reg1 = 2;
+    if ((reg1 >= 1 && reg1 <= 3) || (reg1 == 5))
+        retorno += reg1 << 28;
+    else
+        retorno = -1;
+    return retorno;
+}
+
+long operandoInmediato(char argumento[])
+{
+    char car;
+    int j, k;
+    long retorno;
+    j = 1;
+    if  (argumento[0] >= '0' && argumento[0] <= '9') //Es decimal
+        retorno = atoi(argumento);
+    else
+        if (argumento[0] == '#') //Es decimal
+        {
+            argumento[0] = '0';
+            retorno = atoi(argumento);
+        }
+        else
+            if (argumento[0] == '\'') //Es caracter
+                retorno = argumento[1];
+            else
+                if (argumento[0] == '@') //Es octal
+                    for(k=strlen(argumento)-2; k>=0; k--)
+                    {
+                        car = argumento[j++] - 48;
+                        retorno = (retorno<<3) + (car & 0x7);
+                    }
+                else //Es hexadecimal
+                    for(k=strlen(argumento)-2; k>=0; k--)
+                    {
+                        car = argumento[j++];
+                        if (car <= '9')
+                            car -= 48;
+                        else
+                            car -= 55;
+                        retorno = (retorno<<4) + (car & 0xF);
+                    }
     return retorno;
 }
