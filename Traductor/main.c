@@ -15,12 +15,6 @@ typedef struct
     char constante[10];
 } TConstante;
 
-typedef struct
-{
-    char segBase[3], reg[3], const[10];
-    int signo, decimal;
-} TOpInd;
-
 void generarTraduccion(char* mnemonicos[], int* contMnemonicos, char* indiceRegistros[]);
 
 void primeraPasada(FILE* archEnt, TRotulo rotulos[], int* contRotulos, TInstruccionTexto instrucciones[], int* contLinea);
@@ -29,11 +23,15 @@ void mostrarRotulos(TRotulo rotulos[], int cant);
 
 long traducirMnemonico(char* mnemonicos[], int contMnemonicos, char arg[]);
 
-void argumentoGenerico(TRam ram, int i, char argumento[], TRotulo rotulos[], int contRotulos, char* indiceRegistros[], int* huboError, int numArg);
+void argumentoGenerico(TRam ram, int i, char argumento[], TRotulo rotulos[], int contRotulos, TConstante constantes[], int contConstantes, char* indiceRegistros[], int* huboError, int numArg);
 
 int traducirRotulo(TRotulo rotulos[], int contRotulos, char rotulo[]);
 
 int traducirRegistro(char* indiceRegistros[], char arg[]);
+
+int traducirConstante(TConstante constantes[], int contConstantes, char arg[]);
+
+long operandoDirectoOIndirecto(TConstante constantes[], int contConstantes, char* indiceRegistros[], char arg[], int indirecto);
 
 int main(int argc, char *argv[])
 {
@@ -172,7 +170,7 @@ void generarTraduccion(char* mnemonicos[], int* contMnemonicos, char* indiceRegi
     strcpy(indiceRegistros[1],"CS");
     strcpy(indiceRegistros[2],"DS");
     strcpy(indiceRegistros[3],"ES");
-    strcpy(indiceRegistros[4],"IP");retorno += reg;
+    strcpy(indiceRegistros[4],"IP");
     strcpy(indiceRegistros[5],"SS");
     strcpy(indiceRegistros[6],"SP");
     strcpy(indiceRegistros[7],"BP");
@@ -276,12 +274,12 @@ void argumentoGenerico(TRam ram, int i, char argumento[], TRotulo rotulos[], int
         if (esDirecto)
         {
             ram[i*3] += 2;
-            ram[i*3+numArg] = operandoDirectoOIndirecto(constantes,contConstantes,argumento,0);
+            ram[i*3+numArg] = operandoDirectoOIndirecto(constantes,contConstantes,indiceRegistros,argumento,0);
         }
         else
         {
             ram[i*3] += 3;
-            ram[i*3+numArg] = operandoDirectoOIndirecto(constantes,contConstantes,argumento,1);
+            ram[i*3+numArg] = operandoDirectoOIndirecto(constantes,contConstantes,indiceRegistros,argumento,1);
         }
         if (ram[i*3+numArg] == -1)
         {
@@ -431,7 +429,7 @@ long operandoDirectoOIndirecto(TConstante constantes[], int contConstantes, char
         if ((retorno >= 1 && retorno <= 3) || (retorno == 5))
         {
             retorno = retorno << 28;
-            if (aux[token] == '-')
+            if (token[2] == '-')
                 signo = -1;
             token = strtok(NULL,"+-");
             if (token[strlen(token)-1] != ']') //Hay suma o resta
