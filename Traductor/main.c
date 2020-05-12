@@ -57,7 +57,7 @@ int main(int argc, char *argv[])
     }
     generarTraduccion(mnemonicos, &contMnemonicos, indiceRegistros);
     primeraPasada(archEnt,rotulos,&contRotulos,constantes,&contConstantes,instruccionesTexto,&contLinea,registros,indiceRegistros,&huboError,ram);
-    //mostrarRotulos(rotulos,contRotulos); //COMENTAR ESTO
+    mostrarRotulos(rotulos,contRotulos); //COMENTAR ESTO
     //registros[2] = contLinea * 3;
     //registros[3] = 1000;
     if(argc>3 && strcmp("-o",argv[3])==0)
@@ -297,7 +297,7 @@ void primeraPasada(FILE* archEnt, TRotulo rotulos[], int* contRotulos, TConstant
                     }
                 }
                 //COMENTAR ESTO
-                //printf("\n|%s|%s|%s|\n",instrucciones[(*contLinea)-1].mnemonico,instrucciones[(*contLinea)-1].arg1,instrucciones[(*contLinea)-1].arg2); //Muestra los componentes de la instruccion de cada linea
+                printf("\n|%s|%s|%s|\n",instrucciones[(*contLinea)-1].mnemonico,instrucciones[(*contLinea)-1].arg1,instrucciones[(*contLinea)-1].arg2); //Muestra los componentes de la instruccion de cada linea
             }
         }
     }
@@ -524,7 +524,7 @@ long operandoInmediato(char argumento[])
 {
     char car;
     int j, k;
-    long retorno;
+    long retorno=0;
     j = 1;
     if  (argumento[0] >= '0' && argumento[0] <= '9') //Es decimal
         retorno = atoi(argumento);
@@ -539,15 +539,15 @@ long operandoInmediato(char argumento[])
                 retorno = argumento[1];
             else
                 if (argumento[0] == '@') //Es octal
-                    for(k=strlen(argumento)-2; k>=0; k--)
+                    for(k=1; strlen(argumento)>k; k++)
                     {
-                        car = argumento[j++] - 48;
+                        car = argumento[k] - 48;
                         retorno = (retorno<<3) + (car & 0x7);
                     }
                 else //Es hexadecimal
-                    for(k=strlen(argumento)-2; k>=0; k--)
+                    for(k=1; strlen(argumento)>k; k++)
                     {
-                        car = argumento[j++];
+                        car = argumento[k];
                         if (car <= '9')
                             car -= 48;
                         else
