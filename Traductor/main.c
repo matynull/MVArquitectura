@@ -263,10 +263,10 @@ void primeraPasada(FILE* archEnt, TRotulo rotulos[], int* contRotulos, TConstant
                         {
                             strcpy(aux2,token);
                             strcpy(aux3,aux2);
-                            token = strtok(aux2,"\"");
+                            token = strtok(aux2,"\""); //Se buscan los caracteres entre el principio de aux2 y una comilla. Si el primer caracter de aux2 es una comilla, token es el String
                             if (token != NULL && strcmp(token,aux3) != 0) //El argumento 2 es un String
                             {
-                                if (aux3[0] != '"')
+                                if (aux3[0] != '"') //Token no es el string. Se busca la siguiente comilla
                                     token = strtok(NULL,"\"");
                                 strcpy(instrucciones[(*contLinea)-1].arg2,token);
                             }
@@ -274,7 +274,7 @@ void primeraPasada(FILE* archEnt, TRotulo rotulos[], int* contRotulos, TConstant
                             {
                                 token = strtok(aux3," \t\n,");
                                 if (token != NULL && token[0] != '/')
-                                    if (token[0] == '\'')
+                                    if (token[0] == '\'') //Si el argumento es un caracter ASCII es case sensitive
                                         strcpy(instrucciones[(*contLinea)-1].arg2,token);
                                     else
                                         strcpy(instrucciones[(*contLinea)-1].arg2,strupr(token));
