@@ -436,7 +436,7 @@ int traducirRotulo(TRotulo rotulos[], int contRotulos, char rotulo[])
     int i = 0;
     while (i < contRotulos && strcmp(rotulo,rotulos[i].rotulo) != 0)
         i++;
-    if (i < contRotulos)
+    if (i >= contRotulos)
         return rotulos[i].linea;
     else
         return -1;
@@ -447,7 +447,7 @@ int traducirConstante(TConstante constantes[], int contConstantes, char arg[])
     int i = 0;
     while (i < contConstantes && strcmp(arg,constantes[i].constante) != 0)
         i++;
-    if (i < contConstantes)
+    if (i >= contConstantes)
         return constantes[i].valor;
     else
         return -32000;
