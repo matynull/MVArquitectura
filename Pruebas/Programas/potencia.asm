@@ -1,4 +1,4 @@
-       MOV AX,%0001
+	MOV AX,%0001
         MOV DX,10
         MOV CX,2
         SYS 1

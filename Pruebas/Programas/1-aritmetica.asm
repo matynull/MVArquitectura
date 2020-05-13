@@ -1,4 +1,6 @@
 //Prueba aritmética
+\\ASM DS=300 ES=-1 SP=400
+
 Mov [DS:1],'4   //guarda caracter
 mov [DS:2],%4E  //guarda hexa
 MOV [DS:3],@4   //guarda octal 
