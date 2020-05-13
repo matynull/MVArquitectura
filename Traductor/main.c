@@ -188,31 +188,34 @@ void generarTraduccion(char* mnemonicos[], int* contMnemonicos, char* indiceRegi
 void primeraPasada(FILE* archEnt, TRotulo rotulos[], int* contRotulos, TConstante constantes[], int* contConstantes, TInstruccionTexto instrucciones[], int* contLinea, TRegistros registros, char* indiceRegistros[], int* huboError, TRam ram)
 {
     int DS=500,ES=500,SP=500,i,j,k,tamanoConstantes = 0;
-    char linea[100], aux[100], *auxReg, *auxTam, *token;
+    char linea[100], aux[100], aux2[100], aux3[100], *auxReg, *auxTam, *token;
     (*contLinea) = (*contRotulos) = (*contConstantes) = 0;
     while (fgets(linea,100,archEnt) != NULL)
     {
-        if (linea[0] != '\n' && linea[0] != '/')
+        strcpy(aux,linea);
+        token = strtok(aux," \t\n");
+        if (token != NULL && token[0] != '/')
         {
             if (linea[0] == '\\') //La linea es una directiva
             {
                 strcpy(aux,linea);
+                strupr(aux);
                 token = strtok(aux," \t\n/");
                 while(token != NULL)
                 {
-                    auxReg = token = strtok(NULL," =/");
-                    auxTam = token = strtok(NULL," =/");
-                    switch (traducirRegistro(indiceRegistros,auxReg))
+                    auxReg = token = strtok(NULL," \t=/");
+                    auxTam = token = strtok(NULL," \t=/");
+                    switch (auxReg[0])
                     {
-                    case 2:
-                        DS = atoi(auxTam);
-                        break;
-                    case 3:
-                        ES = atoi(auxTam);
-                        break;
-                    case 6:
-                        SP = atoi(auxTam);
-                        break;
+                        case 'D':
+                            DS = atoi(auxTam);
+                            break;
+                        case 'E':
+                            ES = atoi(auxTam);
+                            break;
+                        case 'S':
+                            SP = atoi(auxTam);
+                            break;
                     }
                 }
             }
@@ -220,7 +223,7 @@ void primeraPasada(FILE* archEnt, TRotulo rotulos[], int* contRotulos, TConstant
             {
                 (*contLinea)++;
                 strcpy(aux,linea);
-                token = strtok(linea," \t\n,/");
+                token = strtok(aux," \t\n,");
                 if (token[strlen(token)-1] == ':') //Hay rotulo
                 {
                     token[strlen(token)-1] = '\0';
@@ -243,24 +246,40 @@ void primeraPasada(FILE* archEnt, TRotulo rotulos[], int* contRotulos, TConstant
                             (*contRotulos)++;
                         }
                     }
-                    token = strtok(NULL," \t\n,/");
+                    token = strtok(NULL," \t\n,"); //Se lee el mnemonico
                 }
-                if (token != NULL)
+                if (token != NULL && token[0] != '/')
                 {
                     strcpy(instrucciones[(*contLinea)-1].mnemonico,strupr(token));
-                    token = strtok(NULL," \t\n,/");
-                    if (token != NULL)
+                    token = strtok(NULL," \t\n,"); //Se lee el argumento 1
+                    if (token != NULL && token[0] != '/')
                     {
                         if (token[0] == '\'')
                             strcpy(instrucciones[(*contLinea)-1].arg1,token);
                         else
                             strcpy(instrucciones[(*contLinea)-1].arg1,strupr(token));
-                        token = strtok(NULL," \t\n,/");
-                        if (token != NULL)
-                            if (token[0] == '\'' || token[0] == '\"')
+                        token = strtok(NULL,"\n"); //Se empieza a leer el argumento 2
+                        if (token != NULL && token[0] != '/')
+                        {
+                            strcpy(aux2,token);
+                            strcpy(aux3,aux2);
+                            token = strtok(aux2,"\"");
+                            if (token != NULL && strcmp(token,aux3) != 0) //El argumento 2 es un String
+                            {
+                                if (aux3[0] != '"')
+                                    token = strtok(NULL,"\"");
                                 strcpy(instrucciones[(*contLinea)-1].arg2,token);
-                            else
-                                strcpy(instrucciones[(*contLinea)-1].arg2,strupr(token));
+                            }
+                            else //El argumento 2 no es un String
+                            {
+                                token = strtok(aux3," \t\n,");
+                                if (token != NULL && token[0] != '/')
+                                    if (token[0] == '\'')
+                                        strcpy(instrucciones[(*contLinea)-1].arg2,token);
+                                    else
+                                        strcpy(instrucciones[(*contLinea)-1].arg2,strupr(token));
+                            }
+                        }
                     }
                 }
                 if (strcmp(instrucciones[(*contLinea)-1].arg1,"EQU") == 0) //La linea declara una constante
@@ -282,7 +301,7 @@ void primeraPasada(FILE* archEnt, TRotulo rotulos[], int* contRotulos, TConstant
                             if (instrucciones[(*contLinea)-1].arg2[0] == '"') //La constante es un String
                             {
                                 constantes[*contConstantes].directa = 0;
-                                strcpy(constantes[*contConstantes].string,strtok(instrucciones[(*contLinea)-1].arg2,"\""));
+                                strcpy(constantes[*contConstantes].string,instrucciones[(*contLinea)-1].arg2);
                                 constantes[*contConstantes].valor = 0;
                             }
                             else //La constante es inmediata
@@ -458,7 +477,7 @@ long operandoDirectoOIndirecto(TConstante constantes[], int contConstantes, char
     int signo = 1;
     long retorno = 0;
     char* token;
-    char aux[20],aux2[20];
+    char aux[20],aux2[20],aux3[20];
     int hayReg = 0, reg1, reg2 = 0, reg3, constante;
     strcpy(aux,arg);
     strcpy(aux2,aux);
@@ -475,7 +494,8 @@ long operandoDirectoOIndirecto(TConstante constantes[], int contConstantes, char
     {
         if (strlen(token) >= 3 && token[2] == '-')
             signo = -1;
-        token = strtok(token,"+-");
+        strcpy(aux3,token);
+        token = strtok(aux3,"+-");
     }
     if (token[strlen(token)-1] != ']') //Hay suma o resta
     {
@@ -487,7 +507,10 @@ long operandoDirectoOIndirecto(TConstante constantes[], int contConstantes, char
         token = strtok(NULL,"]");
     }
     else //No hay suma ni resta
-        token = strtok(token,"]");
+    {
+        strcpy(aux3,token);
+        token = strtok(aux3,"]");
+    }
     if (retorno != -1)
         if (token[0] >= 48 && token[0] <= 57) //El primer caracter del token es un numero
             retorno += (signo * atoi(token)) << (4 * indirecto);
@@ -523,9 +546,8 @@ long operandoDirectoOIndirecto(TConstante constantes[], int contConstantes, char
 long operandoInmediato(char argumento[])
 {
     char car;
-    int j, k;
+    int k;
     long retorno=0;
-    j = 1;
     if  (argumento[0] >= '0' && argumento[0] <= '9') //Es decimal
         retorno = atoi(argumento);
     else
@@ -536,7 +558,10 @@ long operandoInmediato(char argumento[])
         }
         else
             if (argumento[0] == '\'') //Es caracter
-                retorno = argumento[1];
+                if (strlen(argumento) > 1)
+                    retorno = argumento[1];
+                else
+                    retorno = 20;
             else
                 if (argumento[0] == '@') //Es octal
                     for(k=1; strlen(argumento)>k; k++)
