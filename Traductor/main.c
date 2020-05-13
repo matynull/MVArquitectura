@@ -58,8 +58,6 @@ int main(int argc, char *argv[])
     generarTraduccion(mnemonicos, &contMnemonicos, indiceRegistros);
     primeraPasada(archEnt,rotulos,&contRotulos,constantes,&contConstantes,instruccionesTexto,&contLinea,registros,indiceRegistros,&huboError,ram);
     mostrarRotulos(rotulos,contRotulos); //COMENTAR ESTO
-    //registros[2] = contLinea * 3;
-    //registros[3] = 1000;
     if(argc>3 && strcmp("-o",argv[3])==0)
         output=0;
     while (i < contLinea)
@@ -113,7 +111,7 @@ int main(int argc, char *argv[])
     {
         archSalida = fopen(argv[2],"wb");
         fwrite(registros,sizeof(long),16,archSalida);
-        fwrite(ram,sizeof(long),registros[2],archSalida); //registros[2]
+        fwrite(ram,sizeof(long),registros[2],archSalida);
         fclose(archSalida);
     }
     system("pause");
