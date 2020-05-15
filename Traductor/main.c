@@ -225,14 +225,14 @@ void primeraPasada(FILE* archEnt, TRotulo rotulos[], int* contRotulos, TConstant
                 if (token[strlen(token)-1] == ':') //Hay rotulo
                 {
                     token[strlen(token)-1] = '\0';
-                    if (traducirRotulo(rotulos,*contRotulos,strupr(token)) == -1)
+                    if (traducirRotulo(rotulos,*contRotulos,strupr(token)) != -1)
                     {
                         *huboError = 1;
                         printf("ERROR: Ya existe el rotulo %s\n\t\t\t\t",strupr(token));
                     }
                     else //No existia como rotulo
                     {
-                        if (traducirConstante(constantes,*contConstantes,strupr(token)) == -32000)
+                        if (traducirConstante(constantes,*contConstantes,strupr(token)) != -32000)
                         {
                             *huboError = 1;
                             printf("ERROR: Ya existe la constante %s\n\t\t\t\t",strupr(token));
@@ -282,14 +282,14 @@ void primeraPasada(FILE* archEnt, TRotulo rotulos[], int* contRotulos, TConstant
                 }
                 if (strcmp(instrucciones[(*contLinea)-1].arg1,"EQU") == 0) //La linea declara una constante
                 {
-                    if (traducirRotulo(rotulos,*contRotulos,instrucciones[(*contLinea)-1].mnemonico) == -1)
+                    if (traducirRotulo(rotulos,*contRotulos,instrucciones[(*contLinea)-1].mnemonico) != -1)
                     {
                         *huboError = 1;
                         printf("ERROR: Ya existe el rotulo %s\n\t\t\t\t",instrucciones[(*contLinea)-1].mnemonico);
                     }
                     else //No existia como rotulo
                     {
-                        if (traducirConstante(constantes,*contConstantes,instrucciones[(*contLinea)-1].mnemonico) == -32000)
+                        if (traducirConstante(constantes,*contConstantes,instrucciones[(*contLinea)-1].mnemonico) != -32000)
                         {
                             *huboError = 1;
                             printf("ERROR: Ya existe la constante %s\n\t\t\t\t",instrucciones[(*contLinea)-1].mnemonico);
@@ -422,10 +422,11 @@ void argumentoGenerico(TRam ram, int i, char argumento[], TRotulo rotulos[], int
                 if (ram[i*3+numArg] == 0xFFFFFFFF)
                 {
                     ram[i*3+numArg] = traducirConstante(constantes,contConstantes,argumento);
-                    if (ram[i*3+numArg] == 0xFFFFFFFF)
+                    if (ram[i*3+numArg] == -32000)
                     {
                         *huboError = 1;
-                        printf("ERROR: No se encontro el rotulo %s\n\t\t\t\t",argumento);
+                        ram[i*3+numArg] = 0xFFFFFFFF;
+                        printf("ERROR: No se encontro el simbolo %s\n\t\t\t\t",argumento);
                     }
                 }
             }
@@ -453,7 +454,7 @@ int traducirRotulo(TRotulo rotulos[], int contRotulos, char rotulo[])
     int i = 0;
     while (i < contRotulos && strcmp(rotulo,rotulos[i].rotulo) != 0)
         i++;
-    if (i >= contRotulos)
+    if (i < contRotulos)
         return rotulos[i].linea;
     else
         return -1;
@@ -464,7 +465,7 @@ int traducirConstante(TConstante constantes[], int contConstantes, char arg[])
     int i = 0;
     while (i < contConstantes && strcmp(arg,constantes[i].constante) != 0)
         i++;
-    if (i >= contConstantes)
+    if (i < contConstantes)
         return constantes[i].valor;
     else
         return -32000;
