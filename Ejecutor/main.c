@@ -38,7 +38,7 @@
                     system("cls");
                 Ejecucion(reg,ram,flags,regChar,funcionesChar);
             }
-            return 0;
+            return 1;
         }
 
         void cuentaProcFlag(int *imagenes, int flags[],int argc, char*argv[])
@@ -185,9 +185,9 @@
                 for(i=0;i<ram[1];i++){
                     printf("Proceso %d:\n",i+1);
                     printf("PS = %ld | CS = %ld | DS = %ld | ES = %ld \n",ram[16 * i +2],ram[16 * i +2+1],ram[16 * i +2+2],ram[16 * i +2+3]);
-                    printf("IP = %ld | SS = %ld | SP = %ld | BP = %ld \n",ram[16 * i +4],ram[16 * i +2+5],ram[16 * i +2+6],ram[16 * i +2+7]);
-                    printf("AC = %ld | CC = %ld | AX = %ld | BX = %ld \n",ram[16 * i +8],ram[16 * i +2+9],ram[16 * i +2+10],ram[16 * i +2+11]);
-                    printf("CX = %ld | DX = %ld | EX = %ld | FX = %ld \n",ram[16 * i +12],ram[16 * i +2+13],ram[16 * i +2+14],ram[16 * i +2+15]);
+                    printf("IP = %ld | SS = %ld | SP = %ld | BP = %ld \n",ram[16 * i +2+4],ram[16 * i +2+5],ram[16 * i +2+6],ram[16 * i +2+7]);
+                    printf("AC = %ld | CC = %ld | AX = %ld | BX = %ld \n",ram[16 * i +2+8],ram[16 * i +2+9],ram[16 * i +2+10],ram[16 * i +2+11]);
+                    printf("CX = %ld | DX = %ld | EX = %ld | FX = %ld \n",ram[16 * i +2+12],ram[16 * i +2+13],ram[16 * i +2+14],ram[16 * i +2+15]);
                 }
             }
         }
@@ -208,12 +208,19 @@
                 cCelda++;
                 celda3 = ram[cCelda];
                 Interprete(celda1, celda2, celda3, reg, ram,error,muestraD);
+                    printf("%s",muestraD[salto-1]);
+                    printf("\n");
+                    printf("PS = %ld | CS = %ld | DS = %ld | ES = %ld \n",reg[0],reg[1],reg[2],reg[3]);
+                    printf("IP = %ld | SS = %ld | SP = %ld | BP = %ld \n",reg[4],reg[5],reg[6],reg[7]);
+                    printf("AC = %ld | CC = %ld | AX = %ld | BX = %ld \n",reg[8],reg[9],reg[10],reg[11]);
+                    printf("CX = %ld | DX = %ld | EX = %ld | FX = %ld \n",reg[12],reg[13],reg[14],reg[15]);
                 if(salto == reg[4])
                     reg[4]++;
                 cCelda=(reg[4]-1)*3 + reg[1];
                 salto = reg[4];
             }
         }
+
 
         void Interprete(long celda1, long celda2, long celda3, long int reg[], long int ram[],int * error, char * muestraD[])
         {
@@ -225,7 +232,6 @@
             cargaOp(TOp2, &Op2, celda3, reg, ram);
             ejecutaOp(Op1,Op2,CodOp,reg,ram,error,muestraD);
         }
-
 
         void cargaOp(long int TOp, long int **Op, long celda, long int reg[], long int ram[])
         {
@@ -255,6 +261,12 @@
                         if(aux == 0x3)
                         {
                             aux=celda & 0x0FFFFFFF;
+                            if(aux & 0x08000000){
+                                aux = ~(aux);
+                                aux = aux + 0x01;
+                                aux = aux & 0x0FFFFFFF;
+                                aux = aux * -1;
+                            }
                             *Op=ram;
                             *Op+=reg[3]+aux;
                         }
@@ -262,19 +274,24 @@
                     }
                 }
                 else{
-                    int acceso=0;
+                    *Op=ram;
                     aux=(celda & 0xF0000000)>>28;
                     if (aux == 0x02)
-                        acceso+=reg[2];
+                        *Op+=reg[2];
                     else if (aux == 0x03)
-                        acceso+=reg[3];
+                        *Op+=reg[3];
                     else
-                        acceso+=reg[5];
+                        *Op+=reg[5];
                     aux=(celda & 0x0FFFFFF0)>>4;
-                    acceso+=aux;
+                    if(aux & 0x800000){
+                        aux = ~(aux);
+                        aux = aux + 0x01;
+                        aux = aux & 0x00FFFFFF;
+                        aux = aux * -1;
+                    }
+                    *Op+=aux;
                     aux=(celda & 0x0000000F);
-                    acceso+=reg[aux];
-                    *Op=acceso;
+                    *Op+=reg[aux];
                 }
         }
 
@@ -315,10 +332,10 @@
             mnemonico = (celda1 & 0xFFFF0000) >> 16;
             tipoOp1 = (celda1 & 0x0000FF00) >> 8;
             chequeaTipoOP(celda2,operando1,tipoOp1,regChar,funcionesChar);
-            if (mnemonico == 0x81){     // SYS, NO VA NADA EN EL OPERANDO 2
+            if (mnemonico == 0x81 || mnemonico == 0x44 || mnemonico == 0x44 || mnemonico == 0x8F || mnemonico == 0x40 || mnemonico == 0x25|| mnemonico == 0x27){
                 sprintf(linea,"[%04d]: %08X %08X %08X    %d: %s \t %s ",pos,celda1,celda2,celda3,j,funcionesChar[mnemonico],operando1);
             }
-            else{           // no es sys
+            else{
                 tipoOp2 = (celda1 & 0x000000FF);
                 chequeaTipoOP(celda3,operando2,tipoOp2,regChar,funcionesChar);
                 sprintf(linea,"[%04d]: %08X %08X %08X    %d: %s \t %s,%s",pos,celda1,celda2,celda3,j,funcionesChar[mnemonico],operando1,operando2);
@@ -339,7 +356,13 @@
                 else{
                     if(tipoOp == 0x02){ // operando directo
                         aux = (celda & 0xF0000000) >> 32;
-                        aux2 = (celda & 0x0000FFFF);
+                        aux2=celda & 0x0FFFFFFF;
+                        if(aux2 & 0x08000000){
+                            aux2 = ~(aux2);
+                            aux2 = aux2 + 0x01;
+                            aux2 = aux2 & 0x0FFFFFF;
+                            aux2 = aux2 * -1;
+                        }
                         if(aux == 0x00){
                             sprintf(operando,"[%s:%d]",regChar[2],aux2);
                         }
@@ -349,9 +372,15 @@
                     }
                     else{
                         if(tipoOp == 0x03){ // operando indirecto
-                            aux = (celda & 0xF0000000) >> 32;
+                            aux = (celda & 0xF0000000) >> 28;
                             aux2 = (celda & 0x0000000F);
-                            aux3 = (celda & 0x0000FFF0) > 4;
+                            aux3 = (celda & 0x0FFFFFF0)>>4;
+                            if(aux3 & 0x800000){
+                                aux3 = ~(aux3);
+                                aux3 = aux3 + 0x01;
+                                aux3 = aux3 & 0x00FFFFFF;
+                                aux3 = aux3 * -1;
+                            }
                             sprintf(operando,"[%s:%s + %d]",regChar[aux],regChar[aux2],aux3);
                         }
                     }
