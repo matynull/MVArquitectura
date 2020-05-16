@@ -209,6 +209,7 @@
     void shr(long int *op1, long int *op2, long int reg[], long int ram[], int flags[], int *error, char * muestraD[])
     {
         *op1=(*op1) >> (*op2);
+        *op1 = *op1 & 0x7FFFFFFF;
     }
 
 
