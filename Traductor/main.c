@@ -419,7 +419,7 @@ void argumentoGenerico(TRam ram, int i, char argumento[], TRotulo rotulos[], int
                     printf("ERROR: No se encontro el registro %s\n\t\t\t\t",argumento);
                 }
             }
-            else //Es inmediato, rotulo o constante
+            else //Es rotulo o constante
             {
                 ram[i*3+numArg] = traducirRotulo(rotulos,contRotulos,argumento);
                 if (ram[i*3+numArg] == 0xFFFFFFFF)
@@ -476,11 +476,11 @@ int traducirConstante(TConstante constantes[], int contConstantes, char arg[])
 
 long operandoDirectoOIndirecto(TConstante constantes[], int contConstantes, char* indiceRegistros[], char arg[], int indirecto)
 {
-    int signo = 1;
+    int constante;
     long retorno = 0;
     char* token;
     char aux[20],aux2[20],aux3[20];
-    int hayReg = 0, reg1, reg2 = 0, reg3, constante;
+    int hayReg = 0, reg1, reg2 = 0, reg3, signo = 1;
     strcpy(aux,arg);
     strcpy(aux2,aux);
     token = strtok(aux,"[:"); //Busca hasta el primer :
@@ -515,7 +515,10 @@ long operandoDirectoOIndirecto(TConstante constantes[], int contConstantes, char
     }
     if (retorno != -1)
         if (token[0] >= 48 && token[0] <= 57) //El primer caracter del token es un numero
-            retorno += (signo * atoi(token)) << (4 * indirecto);
+            if (indirecto)
+                retorno += ((signo * atoi(token)) & 0x00FFFFFF) << 4;
+            else
+                retorno += ((signo * atoi(token)) & 0x0FFFFFFF);
         else //El primer caracter del token no es un numero
         {
             reg3 = traducirRegistro(indiceRegistros,token);
@@ -530,7 +533,10 @@ long operandoDirectoOIndirecto(TConstante constantes[], int contConstantes, char
                 if (constante == -32000)
                     retorno = -1;
                 else
-                    retorno += (signo * constante) << (4 * indirecto);
+                    if (indirecto)
+                        retorno += ((signo * constante) & 0x00FFFFFF) << 4;
+                    else
+                        retorno += ((signo * constante) & 0x0FFFFFFF);
             }
         }
     if (!hayReg) //Si no hay registro base busca el default en base al registro 2
