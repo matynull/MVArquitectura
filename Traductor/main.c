@@ -46,7 +46,7 @@ int main(int argc, char *argv[])
     char* indiceRegistros[16];
     long codMaq;
     int contRotulos, contLinea, contMnemonicos, contConstantes, i = 0, huboError = 0, output = 1;
-    char linea[100];
+    char linea[100], aux[100];
     FILE* archEnt;
     FILE* archSalida;
     archEnt = fopen(argv[1],"rt");
@@ -101,8 +101,11 @@ int main(int argc, char *argv[])
         for (i=0; i<contLinea; i++)
         {
             do
+            {
                 fgets(linea,100,archEnt);
-            while (linea[0] == '\n' || linea[0] == '/');
+                strcpy(aux,linea);
+            }
+            while (linea[0] == '\n' || linea[0] == '/' || linea[0] == '\\' || strstr(strupr(aux),"EQU") || strtok(aux," \t\n") == NULL);
             printf("\n[%08X]\t\t\t%08X %08X %08X\t%s",i*3,ram[i*3],ram[i*3+1],ram[i*3+2],linea);
         }
     }
