@@ -29,6 +29,6 @@
     void pop(long int *op1, long int *op2, long int reg[], long int ram[], int flags[], int *error, char * muestraD[]);
     void call(long int *op1, long int *op2, long int reg[], long int ram[], int flags[], int *error, char * muestraD[]);
     void ret(long int *op1, long int *op2, long int reg[], long int ram[], int flags[], int *error, char * muestraD[]);
-    void scmp(long int *op1, long int *op2, long int reg[], long int ram[], int flags[], int *error, char * muestraD[]);
-    void smov(long int *op1, long int *op2, long int reg[], long int ram[], int flags[], int *error, char * muestraD[]);
-    void slen(long int *op1, long int *op2, long int reg[], long int ram[], int flags[], int *error, char * muestraD[]);
+    void scmp(long int *op1, long int *op2, long int reg[], long int ram[], int flags[], int *error, char * muestraD[], int inmediato1, int inmediato2);
+    void smov(long int *op1, long int *op2, long int reg[], long int ram[], int flags[], int *error, char * muestraD[],int inmediato2);
+    void slen(long int *op1, long int *op2, long int reg[], long int ram[], int flags[], int *error, char * muestraD[],int inmediato2);

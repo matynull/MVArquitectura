@@ -272,37 +272,96 @@
             reg[4]=*op1;
     }
 
-    void slen(long int *op1, long int *op2, long int reg[], long int ram[], int flags[], int *error, char * muestraD[])
+    void slen(long int *op1, long int *op2, long int reg[], long int ram[], int flags[], int *error, char * muestraD[],int inmediato2)
     {
         *op1=0;
-        int i=*op2;
-        while (ram[i] != 0x00){
+        int i;
+        if(inmediato2 == 1){
+            i=*op2+reg[1];
+            while(ram[i]!=0x00){
+                (*op1)++;
+                i++;
+            }
+        }
+        else{
+            while (*op2 != 0x00){
             (*op1)++;
-            i++;
+            op2++;
+            }
         }
+
     }
 
-    void smov(long int *op1, long int *op2, long int reg[], long int ram[], int flags[], int *error, char * muestraD[])
+    void smov(long int *op1, long int *op2, long int reg[], long int ram[], int flags[], int *error, char * muestraD[],int inmediato2)
     {
-        int i=*op2, j=*op1;
-        while(ram[i] != 0x00){
-            ram[j]=ram[i];
-            i++;
-            j++;
+        int i;
+        if(inmediato2== 1){
+            i=*op2 +reg[1];
+            while(ram[i] != 0x00){
+                *op1 = ram[i];
+                i++;
+                op1++;
+            }
         }
-    }
+        else{
+            while( *op2 != 0x00){
+                *op1=*op2;
+                op2++;
+                op1++;
+            }
+        }
 
-    void scmp(long int *op1, long int *op2, long int reg[], long int ram[], int flags[], int *error, char * muestraD[])
+    }
+    void scmp(long int *op1, long int *op2, long int reg[], long int ram[], int flags[], int *error, char * muestraD[],int inmediato1, int inmediato2)
     {
         int i=*op1, j=*op2;
+        long aux1,aux2;
         reg[9]=0x00;
-        while ((ram[i] != 0x00 || ram[j]!=0x00) && (ram[i]==ram[j])){
-            i++;
-            j++;
+        if(inmediato1 == 1){
+            if(inmediato2==1){      // primero y 2do inmediatos
+                i= *op1 +reg[1];
+                j= *op2 + reg[1];
+                while ((ram[i] != 0x00 || ram[j]!=0x00) && (ram[i]==ram[j])){
+                    i++;
+                    j++;
+                }
+                aux1=ram[i];
+                aux2=ram[j];
+            }
+            else{               // solo primero inmediato
+                i = *op1 + reg[1];
+                while ((ram[i] != 0x00 || *op2!=0x00) && (ram[i]==*op2)){
+                    i++;
+                    op2++;
+                }
+                aux1 = ram[i];
+                aux2 = *op2;
+
+            }
         }
-        if (ram[i]>ram[j])
-            reg[9]=0x01;
-        else
+        else{
+            if(inmediato2==1){      // solo 2do inmediato
+                j=*op2+reg[1];
+                while ((*op1!= 0x00 || ram[j]!=0x00) && (*op1==ram[j])){
+                    op1++;
+                    j++;
+                }
+                aux1 = *op1;
+                aux2 = ram[j];
+            }
+            else{       // ninguno inmediato
+                while ((*op1!= 0x00 || *op2!=0x00) && (*op1==*op2)){
+                    op1++;
+                    op2++;
+                }
+                aux1=*op1;
+                aux2=*op2;
+            }
+        }
+        if(aux1==aux2){
+            reg[9]+=0x01;
+        }
+        if (aux1<aux2)
             reg[9]=0x80000000;
     }
 
@@ -603,34 +662,44 @@ void sys(long int *op1, long int *op2, long int reg[], long int ram[], int flags
 
         if (flags[3]==1)            //-d
         {
-            i=1;
-            int j = (reg[2] - reg[1])/3;
-            while(i<=j){
-              if(i!=reg[4]){
-                    printf("%s\n",muestraD[i-1]);
+            char fin;
+            while(fin!='\n'){
+                i=1;
+                int j = (reg[2] - reg[1])/3;
+                while(i<=j){
+                if(i!=reg[4]){
+                        printf("%s\n",muestraD[i-1]);
+                    }
+                    if(i==reg[4]){
+                        printf(">> %s\n",muestraD[i-1]);
+                    }
+                    i++;
                 }
-                if(i==reg[4]){
-                    printf(">> %s\n",muestraD[i-1]);
-                }
-                i++;
-            }
-            i=0;
+                i=0;
             printf("Registros:\n");
             printf("PS = %ld | CS = %ld | DS = %ld | ES = %ld \n",ram[16 * i +2],ram[16 * i +2+1],ram[16 * i +2+2],ram[16 * i +2+3]);
             printf("IP = %ld | SS = %ld | SP = %ld | BP = %ld \n",ram[16 * i +2+4],ram[16 * i +2+5],ram[16 * i +2+6],ram[16 * i +2+7]);
             printf("AC = %ld | CC = %ld | AX = %ld | BX = %ld \n",ram[16 * i +2+8],ram[16 * i +2+9],ram[16 * i +2+10],ram[16 * i +2+11]);
             printf("CX = %ld | DX = %ld | EX = %ld | FX = %ld \n",ram[16 * i +2+12],ram[16 * i +2+13],ram[16 * i +2+14],ram[16 * i +2+15]);
+            scanf("%c",&fin);
+            }
         }
     }
     else
     {
         if(*op1 == 10)     // SYS 10
         {
-            char auxiliar[20];
+            char auxiliar[18];
             if(reg[11] == 0x2)  // lee en el DS
             {
 
                 i=0;
+                if(bits[12]==0)  // escribe prompt
+                    {
+                        printf("[%04d]:",(reg[13]+reg[3]));
+                    }
+                fflush(stdin);
+                gets(auxiliar);
                 while(auxiliar[i]!=0x00)
                 {
                     ram[reg[2]+reg[13]+i] = auxiliar[i];
@@ -647,8 +716,9 @@ void sys(long int *op1, long int *op2, long int reg[], long int ram[], int flags
                     {
                         printf("[%04d]:",(reg[13]+reg[3]));
                     }
-                    scanf("%s",auxiliar);
                     i=0;
+                    fflush(stdin);
+                    gets(auxiliar);
                     while(auxiliar[i]!=0x00)
                     {
                         ram[reg[3]+reg[13]+i] = auxiliar[i];

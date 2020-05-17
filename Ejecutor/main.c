@@ -163,9 +163,9 @@
             {
                 for(i=0; i<16; i++)
                     reg[i] = ram[ram[1]*16+2 + i];
-                char * muestraD[(reg[2]-reg[1])/3];
+                char * muestraD[(reg[2]-reg[1])];
                 if(flags[3]==1){
-                    for(i=0;i<=(reg[2]-reg[1])/3;i++){
+                    for(i=0;i<=(reg[2]-reg[1]);i++){
                         muestraD[i] = (char*) malloc(50*sizeof(char));
                         strcpy(muestraD[i],"");
                     }
@@ -200,24 +200,29 @@
             int cCelda=reg[1];
             reg[4]=1;
             salto = reg[4];
-            while(cCelda>=reg[1] && cCelda<reg[2])
+            while(cCelda>=reg[1] && cCelda<reg[2] && *error == 0)
             {
                 celda1 = ram[cCelda];
                 cCelda++;
-                celda2 = ram[cCelda];
-                cCelda++;
-                celda3 = ram[cCelda];
-                Interprete(celda1, celda2, celda3, reg, ram,flags,error,muestraD);
-                    //printf("%s",muestraD[salto-1]);
-                    //printf("\n");
-                    //printf("PS = %ld | CS = %ld | DS = %ld | ES = %ld \n",reg[0],reg[1],reg[2],reg[3]);
-                    //printf("IP = %ld | SS = %ld | SP = %ld | BP = %ld \n",reg[4],reg[5],reg[6],reg[7]);
-                    //printf("AC = %ld | CC = %ld | AX = %ld | BX = %ld \n",reg[8],reg[9],reg[10],reg[11]);
-                    //printf("CX = %ld | DX = %ld | EX = %ld | FX = %ld \n",reg[12],reg[13],reg[14],reg[15]);
-                if(salto == reg[4])
-                    reg[4]++;
-                cCelda=(reg[4]-1)*3 + reg[1];
-                salto = reg[4];
+                if((celda1 & 0xFFFF0000)==-1){
+                    cCelda = reg[2]+1;
+                }
+                else{
+                    celda2 = ram[cCelda];
+                    cCelda++;
+                    celda3 = ram[cCelda];
+                    Interprete(celda1, celda2, celda3, reg, ram,flags,error,muestraD);
+                        //printf("%s",muestraD[salto-1]);
+                        //printf("\n");
+                        //printf("PS = %ld | CS = %ld | DS = %ld | ES = %ld \n",reg[0],reg[1],reg[2],reg[3]);
+                        //printf("IP = %ld | SS = %ld | SP = %ld | BP = %ld \n",reg[4],reg[5],reg[6],reg[7]);
+                        //printf("AC = %ld | CC = %ld | AX = %ld | BX = %ld \n",reg[8],reg[9],reg[10],reg[11]);
+                        //printf("CX = %ld | DX = %ld | EX = %ld | FX = %ld \n",reg[12],reg[13],reg[14],reg[15]);
+                    if(salto == reg[4])
+                        reg[4]++;
+                    cCelda=(reg[4]-1)*3 + reg[1];
+                    salto = reg[4];
+                }
             }
         }
 
@@ -229,7 +234,31 @@
             TOp2 = celda1 & 0x000000FF;
             cargaOp(TOp1, &Op1, celda2, reg, ram);
             cargaOp(TOp2, &Op2, celda3, reg, ram);
-            ejecutaOp(Op1,Op2,CodOp,reg,ram,flags,error,muestraD);
+            if (CodOp == 0x50)
+                if (TOp2 == 0x0)
+                    slen(Op1,Op2,reg,ram,flags,error,muestraD,1);
+                else
+                    slen(Op1,Op2,reg,ram,flags,error,muestraD,0);
+            else
+                if (CodOp == 0x51)
+                    if (TOp2 == 0x0)
+                        smov(Op1,Op2,reg,ram,flags,error,muestraD,1);
+                    else
+                        smov(Op1,Op2,reg,ram,flags,error,muestraD,0);
+                else
+                    if (CodOp == 0x53)
+                        if (TOp1 == 0x0)
+                            if (TOp2 == 0x0)
+                                scmp(Op1,Op2,reg,ram,flags,error,muestraD,1,1);
+                            else
+                                scmp(Op1,Op2,reg,ram,flags,error,muestraD,1,0);
+                        else
+                            if (TOp2 == 0x0)
+                                scmp(Op1,Op2,reg,ram,flags,error,muestraD,0,1);
+                            else
+                                scmp(Op1,Op2,reg,ram,flags,error,muestraD,0,0);
+                    else
+                        ejecutaOp(Op1,Op2,CodOp,reg,ram,flags,error,muestraD);
         }
 
         void cargaOp(long int TOp, long int **Op, long celda, long int reg[], long int ram[])
@@ -268,7 +297,7 @@
                         }
 
                     }
-                }
+                }               // TOP indirecto
                 else{
                     *Op=ram;
                     aux=(celda & 0xF0000000)>>28;
@@ -294,44 +323,61 @@
 
         }
 
-        void cargaDissasembly(long int ram[],long int reg[], char * regChar[],char * funcionesChar[],char * muestraD[] , int n){
+        void cargaDissasembly(long int ram[],long int reg[], char * regChar[],char * funcionesChar[],char * muestraD[], int n)
+        {
             int i=0,j=0,pos;
             long celda1,celda2,celda3,mascara;
             char * linea;
             linea = (char*) malloc(100 *sizeof(char));
-            while(i<n){
+            while(i<n)
+            {
                 pos = reg[1]+i;
                 celda1 = ram[reg[1]+i];
                 i++;
-                celda2=ram[reg[1]+i];
-                i++;
-                celda3=ram[reg[1]+i];
-                cargaLinea(celda1,celda2,celda3,linea,pos,j+1,regChar,funcionesChar);
-                strcpy(muestraD[j],linea);
-                j++;
-                i++;
+                if((celda1 & 0xFFFF0000) == 0x0)
+                {
+                    cargaLinea(celda1,0,0,linea,pos,j+1,regChar,funcionesChar);
                 }
-                for(i=0;i<j;i++){
-                    printf("%s \n", muestraD[i]);
+                else
+                {
+                    celda2=ram[reg[1]+i];
+                    i++;
+                    celda3=ram[reg[1]+i];
+                    i++;
+                    cargaLinea(celda1,celda2,celda3,linea,pos,j+1,regChar,funcionesChar);
+
                 }
+              strcpy(muestraD[j],linea);
+              j++;
             }
+            for(i=0; i<j; i++)
+            {
+                printf("%s \n", muestraD[i]);
+            }
+        }
+
 
         void cargaLinea(long int celda1,long int celda2, long int celda3, char * linea,int pos,int j,char * regChar[], char * funcionesChar[]){
             long int mnemonico,tipoOp1,tipoOp2;
             char * operando1;
             char * operando2;
-            operando1= (char*) malloc(50*sizeof(char));
-            operando2= (char*) malloc(50*sizeof(char));
-            mnemonico = (celda1 & 0xFFFF0000) >> 16;
-            tipoOp1 = (celda1 & 0x0000FF00) >> 8;
-            chequeaTipoOP(celda2,operando1,tipoOp1,regChar,funcionesChar);
-            if (mnemonico == 0x81 || mnemonico == 0x44 || mnemonico == 0x44 || mnemonico == 0x8F || mnemonico == 0x40 || mnemonico == 0x25|| mnemonico == 0x27){
-                sprintf(linea,"[%04d]: %08X %08X %08X    %d: %s \t %s ",pos,celda1,celda2,celda3,j,funcionesChar[mnemonico],operando1);
+            if((celda1 & 0xFFFF0000) == 0x0){
+                sprintf(linea,"[%04d]: %08X \t %c",pos,celda1,celda1);
             }
             else{
-                tipoOp2 = (celda1 & 0x000000FF);
-                chequeaTipoOP(celda3,operando2,tipoOp2,regChar,funcionesChar);
-                sprintf(linea,"[%04d]: %08X %08X %08X    %d: %s \t %s,%s",pos,celda1,celda2,celda3,j,funcionesChar[mnemonico],operando1,operando2);
+                operando1= (char*) malloc(50*sizeof(char));
+                operando2= (char*) malloc(50*sizeof(char));
+                mnemonico = (celda1 & 0xFFFF0000) >> 16;
+                tipoOp1 = (celda1 & 0x0000FF00) >> 8;
+                chequeaTipoOP(celda2,operando1,tipoOp1,regChar,funcionesChar);
+                if (mnemonico == 0x81 || mnemonico == 0x44 || mnemonico == 0x44 || mnemonico == 0x8F || mnemonico == 0x40 || mnemonico == 0x25|| mnemonico == 0x27){
+                    sprintf(linea,"[%04d]: %08X %08X %08X    %d: %s \t %s ",pos,celda1,celda2,celda3,j,funcionesChar[mnemonico],operando1);
+                }
+                else{
+                    tipoOp2 = (celda1 & 0x000000FF);
+                    chequeaTipoOP(celda3,operando2,tipoOp2,regChar,funcionesChar);
+                    sprintf(linea,"[%04d]: %08X %08X %08X    %d: %s \t %s,%s",pos,celda1,celda2,celda3,j,funcionesChar[mnemonico],operando1,operando2);
+                }
             }
         }
 
