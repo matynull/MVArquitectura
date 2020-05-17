@@ -1,5 +1,5 @@
 
-\\ASM EXTRA = 550 	 STACK =700    //Directiva
+\\ASM EXTRA =550  	STACK= 700    //Directiva
 
 	MOV AX,5
    cON1   EQU 'A
@@ -20,7 +20,7 @@ SLEN [DS:10], con2 //Guarda la longitud del string CON2 en la celda DS:10
 	MOV DX,7
 	SYS 20 //Imprime la cadena copiada con un endline
 
-	SCMP [ES:7], CON2
+	SCMP CON2 , [ES:7]
 	JNZ fin
 
 loop:	MOV AX,0
