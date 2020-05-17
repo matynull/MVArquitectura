@@ -310,7 +310,10 @@ void sys(long int *op1, long int *op2, long int reg[], long int ram[], int flags
 {
     long mascara=0x01, aux;
     int bits[16], i, v1, v2;
-    char auxc, *respuesta, *valor1, *valor2;
+    char auxc;
+    char respuesta[10];
+    char *valor1;
+    char *valor2;
 
     for (i=0; i<16; i++)
     {
@@ -567,16 +570,22 @@ void sys(long int *op1, long int *op2, long int reg[], long int ram[], int flags
     }
     else if(*op1 == 0)      // SYS 0
     {
+        if (flags[2]==1)            // -c
+            system("cls");
         if(flags[1]==1)
         {
-            printf("[%d] cmd:",reg[4]);
+            printf("[%03d] cmd:",reg[4]);
             char delim[]=" ";
             char caracter;
+            fflush(stdin);
             fgets(respuesta,10,stdin);
+            i=0;
             if ((respuesta[0] != '\n'))
             {
-                *valor1=strtok(respuesta,delim);
-                *valor2=strtok(respuesta,delim);
+                valor1 = (char*)malloc(5*sizeof(char));
+                valor2 = (char*)malloc(5*sizeof(char));
+                strcpy(valor1,strtok(respuesta,delim));
+                strcpy(valor2,strtok(respuesta,delim));
                 v1=atoi(valor1);
                 v2=atoi(valor2);
                 if (valor2=='\n')
@@ -587,26 +596,30 @@ void sys(long int *op1, long int *op2, long int reg[], long int ram[], int flags
                         caracter=ram[i];
                     else
                         caracter='.';
-                    printf("[%d]: %X %c %ld\n",i,ram[i],caracter,ram[i]);
+                    printf("[%04d]: %08X %c %ld\n",i,ram[reg[2]+i],caracter,ram[reg[2]+i]);
                 }
             }
         }
-        if (flags[2]==1)
-            system("cls");
-        if (flags[3]==1)
+
+        if (flags[3]==1)            //-d
         {
-            i=0;
+            i=1;
             int j = (reg[2] - reg[1])/3;
-            while(i<j){
-                while(i!=reg[4]){
-                    printf("%s",muestraD[i]);
-                    i++;
+            while(i<=j){
+              if(i!=reg[4]){
+                    printf("%s\n",muestraD[i-1]);
                 }
                 if(i==reg[4]){
-                    printf(">> %s",muestraD[i]);
+                    printf(">> %s\n",muestraD[i-1]);
                 }
                 i++;
             }
+            i=0;
+            printf("Registros:\n");
+            printf("PS = %ld | CS = %ld | DS = %ld | ES = %ld \n",ram[16 * i +2],ram[16 * i +2+1],ram[16 * i +2+2],ram[16 * i +2+3]);
+            printf("IP = %ld | SS = %ld | SP = %ld | BP = %ld \n",ram[16 * i +2+4],ram[16 * i +2+5],ram[16 * i +2+6],ram[16 * i +2+7]);
+            printf("AC = %ld | CC = %ld | AX = %ld | BX = %ld \n",ram[16 * i +2+8],ram[16 * i +2+9],ram[16 * i +2+10],ram[16 * i +2+11]);
+            printf("CX = %ld | DX = %ld | EX = %ld | FX = %ld \n",ram[16 * i +2+12],ram[16 * i +2+13],ram[16 * i +2+14],ram[16 * i +2+15]);
         }
     }
     else

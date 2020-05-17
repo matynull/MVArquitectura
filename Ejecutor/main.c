@@ -8,10 +8,10 @@
         void Ejecucion(long int reg[], long int ram[], int flags[],char * regChar[], char * funcionesChar[]);
         void EjecucionImg(long int [], long int [],int flags[],int *error,char * muestraD[]);
         void cargaDissasembly(long int ram[],long int reg[], char * regChar[],char * funcionesChar[],char * muestraD[] , int n);
-        void Interprete(long, long, long, long int [], long int [],int * error, char * muestraD []);
-        void (*funciones[0x8F])(long int *op1, long int *op2, long int reg[], long int ram[],int * error, char * muestraD);
+        void Interprete(long, long, long, long int [], long int [],int flags[],int * error, char * muestraD []);
+        void (*funciones[0x8F])(long int *op1, long int *op2, long int reg[], long int ram[],int flags[],int * error, char * muestraD);
         void cargaOp(long int TOp, long int **Op, long celda, long int reg[], long int ram[]);
-        void ejecutaOp(long int * Op1, long int * Op2, long int CodOp,long int reg[],long int ram[],int * error, char * muestraD[]);
+        void ejecutaOp(long int * Op1, long int * Op2, long int CodOp,long int reg[],long int ram[],int flags[],int * error, char * muestraD[]);
         void cargarFunciones(void *[]);
         void cuentaProcFlag(int *imagenes, int flags[],int argc, char*argv[]);
         void cargaFuncionesChar(char *funcionesChar[]);
@@ -163,9 +163,9 @@
             {
                 for(i=0; i<16; i++)
                     reg[i] = ram[ram[1]*16+2 + i];
-                char * muestraD[reg[2]-reg[1]];
+                char * muestraD[(reg[2]-reg[1])/3];
                 if(flags[3]==1){
-                    for(i=0;i<=reg[2]-reg[1];i++){
+                    for(i=0;i<=(reg[2]-reg[1])/3;i++){
                         muestraD[i] = (char*) malloc(50*sizeof(char));
                         strcpy(muestraD[i],"");
                     }
@@ -207,13 +207,13 @@
                 celda2 = ram[cCelda];
                 cCelda++;
                 celda3 = ram[cCelda];
-                Interprete(celda1, celda2, celda3, reg, ram,error,muestraD);
-                    printf("%s",muestraD[salto-1]);
-                    printf("\n");
-                    printf("PS = %ld | CS = %ld | DS = %ld | ES = %ld \n",reg[0],reg[1],reg[2],reg[3]);
-                    printf("IP = %ld | SS = %ld | SP = %ld | BP = %ld \n",reg[4],reg[5],reg[6],reg[7]);
-                    printf("AC = %ld | CC = %ld | AX = %ld | BX = %ld \n",reg[8],reg[9],reg[10],reg[11]);
-                    printf("CX = %ld | DX = %ld | EX = %ld | FX = %ld \n",reg[12],reg[13],reg[14],reg[15]);
+                Interprete(celda1, celda2, celda3, reg, ram,flags,error,muestraD);
+                    //printf("%s",muestraD[salto-1]);
+                    //printf("\n");
+                    //printf("PS = %ld | CS = %ld | DS = %ld | ES = %ld \n",reg[0],reg[1],reg[2],reg[3]);
+                    //printf("IP = %ld | SS = %ld | SP = %ld | BP = %ld \n",reg[4],reg[5],reg[6],reg[7]);
+                    //printf("AC = %ld | CC = %ld | AX = %ld | BX = %ld \n",reg[8],reg[9],reg[10],reg[11]);
+                    //printf("CX = %ld | DX = %ld | EX = %ld | FX = %ld \n",reg[12],reg[13],reg[14],reg[15]);
                 if(salto == reg[4])
                     reg[4]++;
                 cCelda=(reg[4]-1)*3 + reg[1];
@@ -221,7 +221,7 @@
             }
         }
 
-        void Interprete(long celda1, long celda2, long celda3, long int reg[], long int ram[],int * error, char * muestraD[])
+        void Interprete(long celda1, long celda2, long celda3, long int reg[], long int ram[],int flags[], int * error, char * muestraD[])
         {
             long int CodOp, TOp1, TOp2, *Op1, *Op2;
             CodOp = (celda1 & 0xFFFF0000)>>16;
@@ -229,7 +229,7 @@
             TOp2 = celda1 & 0x000000FF;
             cargaOp(TOp1, &Op1, celda2, reg, ram);
             cargaOp(TOp2, &Op2, celda3, reg, ram);
-            ejecutaOp(Op1,Op2,CodOp,reg,ram,error,muestraD);
+            ejecutaOp(Op1,Op2,CodOp,reg,ram,flags,error,muestraD);
         }
 
         void cargaOp(long int TOp, long int **Op, long celda, long int reg[], long int ram[])
@@ -288,9 +288,9 @@
                 }
         }
 
-        void ejecutaOp(long int * Op1, long int * Op2, long int CodOp,long int reg[],long int ram[],int * error,char * muestraD[])
+        void ejecutaOp(long int * Op1, long int * Op2, long int CodOp,long int reg[],long int ram[],int flags[], int * error,char * muestraD[])
         {
-            (*funciones[CodOp])(Op1,Op2,reg,ram,error,muestraD);
+            (*funciones[CodOp])(Op1,Op2,reg,ram,flags,error,muestraD);
 
         }
 
