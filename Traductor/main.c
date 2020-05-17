@@ -188,8 +188,8 @@ void generarTraduccion(char* mnemonicos[], int* contMnemonicos, char* indiceRegi
 
 void primeraPasada(FILE* archEnt, TRotulo rotulos[], int* contRotulos, TConstante constantes[], int* contConstantes, TInstruccionTexto instrucciones[], int* contLinea, TRegistros registros, char* indiceRegistros[], int* huboError, TRam ram)
 {
-    int DS=500,ES=500,SP=500,i,j,k,tamanoConstantes = 0;
-    char linea[100], aux[100], aux2[100], aux3[100], *auxReg, *auxTam, *token;
+    int DATA=500,EXTRA=500,STACK=500,i,j,k,tamanoConstantes = 0, esString = 0;
+    char linea[100], aux[100], aux2[100], aux3[100], auxReg, *token;
     (*contLinea) = (*contRotulos) = (*contConstantes) = 0;
     while (fgets(linea,100,archEnt) != NULL)
     {
@@ -201,21 +201,22 @@ void primeraPasada(FILE* archEnt, TRotulo rotulos[], int* contRotulos, TConstant
             {
                 strcpy(aux,linea);
                 strupr(aux);
-                token = strtok(aux," \t\n/");
-                while(token != NULL)
+                token = strtok(aux," \t\n\\");
+                while(token != NULL && token[0] != '/')
                 {
-                    auxReg = token = strtok(NULL," \t=/");
-                    auxTam = token = strtok(NULL," \t=/");
-                    switch (auxReg[0])
+                    token = strtok(NULL," \t=");
+                    auxReg = token[0];
+                    token = strtok(NULL," \t=");
+                    switch (auxReg)
                     {
                         case 'D':
-                            DS = atoi(auxTam);
+                            DATA = atoi(token);
                             break;
                         case 'E':
-                            ES = atoi(auxTam);
+                            EXTRA = atoi(token);
                             break;
                         case 'S':
-                            SP = atoi(auxTam);
+                            STACK = atoi(token);
                             break;
                     }
                 }
@@ -267,6 +268,7 @@ void primeraPasada(FILE* archEnt, TRotulo rotulos[], int* contRotulos, TConstant
                             token = strtok(aux2,"\""); //Se buscan los caracteres entre el principio de aux2 y una comilla. Si el primer caracter de aux2 es una comilla, token es el String
                             if (token != NULL && strcmp(token,aux3) != 0) //El argumento 2 es un String
                             {
+                                esString = 1;
                                 if (aux3[0] != '"') //Token no es el string. Se busca la siguiente comilla
                                     token = strtok(NULL,"\"");
                                 strcpy(instrucciones[(*contLinea)-1].arg2,token);
@@ -299,15 +301,15 @@ void primeraPasada(FILE* archEnt, TRotulo rotulos[], int* contRotulos, TConstant
                         }
                         else //No existia como rotulo ni como constante
                         {
-                            if (instrucciones[(*contLinea)-1].arg2[0] == '"') //La constante es un String
+                            if (esString) //La constante es un String
                             {
-                                constantes[*contConstantes].directa = 0;
+                                constantes[*contConstantes].directa = 1;
                                 strcpy(constantes[*contConstantes].string,instrucciones[(*contLinea)-1].arg2);
                                 constantes[*contConstantes].valor = 0;
                             }
                             else //La constante es inmediata
                             {
-                                constantes[*contConstantes].directa = 1;
+                                constantes[*contConstantes].directa = 0;
                                 constantes[*contConstantes].valor = operandoInmediato(instrucciones[(*contLinea)-1].arg2);
                             }
                             strcpy(constantes[*contConstantes].constante,instrucciones[(*contLinea)-1].mnemonico);
@@ -323,27 +325,28 @@ void primeraPasada(FILE* archEnt, TRotulo rotulos[], int* contRotulos, TConstant
     }
     k = (*contLinea) * 3;
     for (i=0; i<(*contConstantes); i++)
-        if (constantes[i].directa != 1)
+        if (constantes[i].directa)
         {
             constantes[i].valor = k;
             for (j=0; j<=strlen(constantes[i].string); j++)
             {
                 tamanoConstantes++;
-                ram[k++] = constantes[i].string[j];
+                ram[k] = constantes[i].string[j];
+                k++;
             }
         }
     registros[2] = (*contLinea) * 3 + tamanoConstantes;
-    if (ES != -1)
+    if (EXTRA != -1)
     {
-        registros[3] = registros[2] + DS;
-        registros[5] = registros[3] + ES;
+        registros[3] = registros[2] + DATA;
+        registros[5] = registros[3] + EXTRA;
     }
     else
     {
         registros[3] = -1;
-        registros[5] = registros[2] + DS;
+        registros[5] = registros[2] + DATA;
     }
-    registros[6] = SP;
+    registros[6] = STACK;
     registros[0] = registros[5] + registros[6];
 }
 
