@@ -371,8 +371,7 @@ void sys(long int *op1, long int *op2, long int reg[], long int ram[], int flags
     int bits[16], i, v1, v2;
     char auxc;
     char respuesta[10];
-    char *valor1;
-    char *valor2;
+    char * token;
 
     for (i=0; i<16; i++)
     {
@@ -631,28 +630,27 @@ void sys(long int *op1, long int *op2, long int reg[], long int ram[], int flags
     {
         if (flags[2]==1)            // -c
             system("cls");
-        if(flags[1]==1)
+        if(flags[1]==1)             // -b
         {
             printf("[%03d] cmd:",reg[4]);
-            char delim[]=" ";
+            char delim[]=" \t\n";
             char caracter;
             fflush(stdin);
             fgets(respuesta,10,stdin);
             i=0;
-            if ((respuesta[0] != '\n'))
+            token = strtok(respuesta,delim);
+            if (token != NULL)
             {
-                valor1 = (char*)malloc(5*sizeof(char));
-                valor2 = (char*)malloc(5*sizeof(char));
-                strcpy(valor1,strtok(respuesta,delim));
-                strcpy(valor2,strtok(respuesta,delim));
-                v1=atoi(valor1);
-                v2=atoi(valor2);
-                if (valor2=='\n')
+                v1=atoi(token);
+                token = strtok(NULL,delim);
+                if (token != NULL)
+                    v2=atoi(token);
+                else
                     v2=v1;
                 for (i=v1; i<=v2; i++)
                 {
-                    if (ram[i]>=0x21 && ram[i]<=0x7E)
-                        caracter=ram[i];
+                    if (ram[reg[2]+i]>=0x21 && ram[i]<=0x7E)
+                        caracter=ram[reg[2]+i];
                     else
                         caracter='.';
                     printf("[%04d]: %08X %c %ld\n",i,ram[reg[2]+i],caracter,ram[reg[2]+i]);
@@ -668,7 +666,7 @@ void sys(long int *op1, long int *op2, long int reg[], long int ram[], int flags
                 int j = (reg[2] - reg[1])/3;
                 while(i<=j){
                 if(i!=reg[4]){
-                        printf("%s\n",muestraD[i-1]);
+                        printf("   %s\n",muestraD[i-1]);
                     }
                     if(i==reg[4]){
                         printf(">> %s\n",muestraD[i-1]);
@@ -681,6 +679,7 @@ void sys(long int *op1, long int *op2, long int reg[], long int ram[], int flags
             printf("IP = %ld | SS = %ld | SP = %ld | BP = %ld \n",ram[16 * i +2+4],ram[16 * i +2+5],ram[16 * i +2+6],ram[16 * i +2+7]);
             printf("AC = %ld | CC = %ld | AX = %ld | BX = %ld \n",ram[16 * i +2+8],ram[16 * i +2+9],ram[16 * i +2+10],ram[16 * i +2+11]);
             printf("CX = %ld | DX = %ld | EX = %ld | FX = %ld \n",ram[16 * i +2+12],ram[16 * i +2+13],ram[16 * i +2+14],ram[16 * i +2+15]);
+            fflush(stdin);
             scanf("%c",&fin);
             }
         }
@@ -785,7 +784,7 @@ void sys(long int *op1, long int *op2, long int reg[], long int ram[], int flags
                         }
                     }
                 }
-                if(bits[8==0])          // ESCRIBO ENDLINE
+                if(bits[8]==0)          // ESCRIBO ENDLINE
                     printf("\n");
             }
 

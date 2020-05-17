@@ -38,6 +38,7 @@
                     system("cls");
                 Ejecucion(reg,ram,flags,regChar,funcionesChar);
             }
+            system("pause");
             return 1;
         }
 
