@@ -1,0 +1,43 @@
+Funcionamiento del traductor:
+-Se reemplazan todas las ocurrencias de CON1 por 65 en decimal o 41 en hexa
+-Se reemplazan todas las ocurrencias de CON2 por la celda X
+-Se modifican los registros que reservan el espacio de cada segmento
+
+Funcionamiento del ejecutor:
+-Se pone un 5 en AX
+-Se pone en FX un 65 (41 en hexa)
+-Se pone en [ES:4] un 1
+-Se pone en [DS:10] un 15 (longitud de la cadena CON2)
+-Se pone en AX un 1 (de la celda [ES:4]
+-Se imprime un 15 por pantalla (longitud de la cadena CON2)
+-Se copia la cadena CON2 en [ES:7]
+-Se muestra la cadena copiada.
+-Si la cadena CON2 y la copiada no son iguales termina el programa
+-Lee un string por teclado y lo guarda en [DS:100] hasta que sea igual a CON2
+-Termina el programa
+
+Valores finales:
+
+Registros:
+PS = 0
+CS = 0
+DS = 82
+ES = 582
+IP = 0
+SS = 1632
+SP = 700
+BP = 0
+AC = 0
+CC = ?
+AX = 0
+BX = 2
+CX = 1
+DX = 100
+EX = 0
+FX = 65 (41 en hexa)
+
+Memoria:
+[DS:10] = ram[92] = 15 (F en hexa)
+[DS:100] en adelante = ram[182] en adelante = String leido por teclado
+[ES:4] = ram[586] = 1
+[ES:7] en adelante = ram[589] en adelante = Hola como andas\0
