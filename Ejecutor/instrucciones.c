@@ -368,7 +368,7 @@
 void sys(long int *op1, long int *op2, long int reg[], long int ram[], int flags[], int *error, char * muestraD[])
 {
     long mascara=0x01, aux;
-    int bits[16], i, v1, v2;
+    int bits[16], i, v1, v2,j;
     char auxc;
     char respuesta[10];
     char * token;
@@ -660,11 +660,12 @@ void sys(long int *op1, long int *op2, long int reg[], long int ram[], int flags
 
         if (flags[3]==1)            //-d
         {
-            char fin;
+            char fin='0';
+            fflush(stdin);
             while(fin!='\n'){
                 i=1;
-                int j = (reg[2] - reg[1])/3;
-                while(i<=j){
+                int aux3 = strlen(muestraD[i]);
+                while(aux3 > 32){
                 if(i!=reg[4]){
                         printf("   %s\n",muestraD[i-1]);
                     }
@@ -672,15 +673,16 @@ void sys(long int *op1, long int *op2, long int reg[], long int ram[], int flags
                         printf(">> %s\n",muestraD[i-1]);
                     }
                     i++;
+                    aux3 = strlen(muestraD[i-1]);
                 }
                 i=0;
-            printf("Registros:\n");
-            printf("PS = %ld | CS = %ld | DS = %ld | ES = %ld \n",ram[16 * i +2],ram[16 * i +2+1],ram[16 * i +2+2],ram[16 * i +2+3]);
-            printf("IP = %ld | SS = %ld | SP = %ld | BP = %ld \n",ram[16 * i +2+4],ram[16 * i +2+5],ram[16 * i +2+6],ram[16 * i +2+7]);
-            printf("AC = %ld | CC = %ld | AX = %ld | BX = %ld \n",ram[16 * i +2+8],ram[16 * i +2+9],ram[16 * i +2+10],ram[16 * i +2+11]);
-            printf("CX = %ld | DX = %ld | EX = %ld | FX = %ld \n",ram[16 * i +2+12],ram[16 * i +2+13],ram[16 * i +2+14],ram[16 * i +2+15]);
-            fflush(stdin);
-            scanf("%c",&fin);
+                printf("Registros:\n");
+                printf("PS = %ld | CS = %ld | DS = %ld | ES = %ld \n",ram[16 * i +2],ram[16 * i +2+1],ram[16 * i +2+2],ram[16 * i +2+3]);
+                printf("IP = %ld | SS = %ld | SP = %ld | BP = %ld \n",ram[16 * i +2+4],ram[16 * i +2+5],ram[16 * i +2+6],ram[16 * i +2+7]);
+                printf("AC = %ld | CC = %ld | AX = %ld | BX = %ld \n",ram[16 * i +2+8],ram[16 * i +2+9],ram[16 * i +2+10],ram[16 * i +2+11]);
+                printf("CX = %ld | DX = %ld | EX = %ld | FX = %ld \n",ram[16 * i +2+12],ram[16 * i +2+13],ram[16 * i +2+14],ram[16 * i +2+15]);
+                fflush(stdin);
+                scanf("%c",&fin);
             }
         }
     }
