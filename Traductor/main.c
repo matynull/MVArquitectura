@@ -57,7 +57,7 @@ int main(int argc, char *argv[])
     }
     generarTraduccion(mnemonicos, &contMnemonicos, indiceRegistros);
     primeraPasada(archEnt,rotulos,&contRotulos,constantes,&contConstantes,instruccionesTexto,&contLinea,registros,indiceRegistros,&huboError,ram);
-    mostrarRotulos(rotulos,contRotulos); //COMENTAR ESTO
+    //mostrarRotulos(rotulos,contRotulos); //COMENTAR ESTO
     if(argc>3 && strcmp("-o",argv[3])==0)
         output=0;
     while (i < contLinea)
@@ -326,9 +326,9 @@ void primeraPasada(FILE* archEnt, TRotulo rotulos[], int* contRotulos, TConstant
                         }
                     }
                 }
-                else
+                //else
                     //COMENTAR ESTO
-                    printf("\n|%s|%s|%s|\n",instrucciones[(*contLinea)-1].mnemonico,instrucciones[(*contLinea)-1].arg1,instrucciones[(*contLinea)-1].arg2); //Muestra los componentes de la instruccion de cada linea
+                    //printf("\n|%s|%s|%s|\n",instrucciones[(*contLinea)-1].mnemonico,instrucciones[(*contLinea)-1].arg1,instrucciones[(*contLinea)-1].arg2); //Muestra los componentes de la instruccion de cada linea
             }
         }
     }
