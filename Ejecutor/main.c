@@ -204,7 +204,7 @@
             {
                 celda1 = ram[cCelda];
                 cCelda++;
-                if((celda1 & 0xFFFF0000)==-1){
+                if((celda1 & 0xFFFF0000)==0x00){
                     cCelda = reg[2]+1;
                 }
                 else{
