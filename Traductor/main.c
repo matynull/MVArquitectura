@@ -581,7 +581,7 @@ long operandoInmediato(char argumento[])
                 if (strlen(argumento) > 1)
                     retorno = argumento[1];
                 else
-                    retorno = 20;
+                    retorno = 0x20;
             else
                 if (argumento[0] == '@') //Es octal
                     for(k=1; strlen(argumento)>k; k++)
