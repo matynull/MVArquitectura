@@ -88,7 +88,7 @@ int main(int argc, char *argv[])
                     {
                         ram[i*3] = (codMaq << 8);
                         argumentoGenerico(ram,i,instruccionesTexto[i].arg1,rotulos,contRotulos,constantes,contConstantes,indiceRegistros,&huboError,1);
-                        if (codMaq != 0x20 && codMaq != 0x33 && (codMaq < 24 || codMaq > 29) && codMaq != 0x40 && codMaq != 0x44 && codMaq != 0x45)
+                        if (codMaq != 0x20 && codMaq != 0x33 && (codMaq < 0x24 || codMaq > 0x29) && codMaq != 0x40 && codMaq != 0x44 && codMaq != 0x45)
                             argumentoGenerico(ram,i,instruccionesTexto[i].arg2,rotulos,contRotulos,constantes,contConstantes,indiceRegistros,&huboError,2);
                     }
         }
