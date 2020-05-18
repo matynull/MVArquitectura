@@ -650,11 +650,11 @@ void sys(long int *op1, long int *op2, long int reg[], long int ram[], int flags
                     v2=v1;
                 for (i=v1; i<=v2; i++)
                 {
-                    if (ram[reg[2]+i]>=0x21 && ram[reg[2]+i]<=0x7E)
-                        caracter=ram[reg[2]+i];
+                    if (ram[i]>=0x20 && ram[i]<=0x7E)
+                        caracter=ram[i];
                     else
                         caracter='.';
-                    printf("[%04d]: %08X %c %ld\n",i,ram[reg[2]+i],caracter,ram[reg[2]+i]);
+                    printf("[%04d]: %08X %c %ld\n",i,ram[i],caracter,ram[i]);
                 }
             }
         }
