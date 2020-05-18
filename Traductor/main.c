@@ -560,7 +560,7 @@ long operandoInmediato(char argumento[])
     char car;
     int k;
     long retorno=0;
-    if  (argumento[0] >= '0' && argumento[0] <= '9') //Es decimal
+    if  (argumento[0] >= '0' && argumento[0] <= '9' || argumento[0]=='-') //Es decimal
         retorno = atoi(argumento);
     else
         if (argumento[0] == '#') //Es decimal
