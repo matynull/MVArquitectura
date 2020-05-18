@@ -130,7 +130,7 @@
                     reg[1] += corrimiento;
                     reg[2] += corrimiento;
                     if(reg[3]== -1 )
-                        reg[3] = ram[ (16 * (i) + 2)  + 3]; // rescato el ES de la imagen anterior. acordarse que i = imgactual -1.
+                        reg[3] =ram[((16 * (i-1) + 2)) + 3]; // rescato el ES de la imagen anterior.
                     else
                         reg[3]+= corrimiento;
                     reg[5]+= corrimiento;
