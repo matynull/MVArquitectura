@@ -275,7 +275,7 @@ void primeraPasada(FILE* archEnt, TRotulo rotulos[], int* contRotulos, TConstant
                             }
                             else //El argumento 2 no es un String
                             {
-                                token = strtok(aux3," \t\n,");
+                                token = strtok(aux3," \t\n,/");
                                 if (token != NULL && token[0] != '/')
                                     if (token[0] == '\'') //Si el argumento es un caracter ASCII es case sensitive
                                         strcpy(instrucciones[(*contLinea)-1].arg2,token);
@@ -318,8 +318,9 @@ void primeraPasada(FILE* archEnt, TRotulo rotulos[], int* contRotulos, TConstant
                         }
                     }
                 }
-                //COMENTAR ESTO
-                printf("\n|%s|%s|%s|\n",instrucciones[(*contLinea)-1].mnemonico,instrucciones[(*contLinea)-1].arg1,instrucciones[(*contLinea)-1].arg2); //Muestra los componentes de la instruccion de cada linea
+                else
+                    //COMENTAR ESTO
+                    printf("\n|%s|%s|%s|\n",instrucciones[(*contLinea)-1].mnemonico,instrucciones[(*contLinea)-1].arg1,instrucciones[(*contLinea)-1].arg2); //Muestra los componentes de la instruccion de cada linea
             }
         }
     }
@@ -559,7 +560,7 @@ long operandoInmediato(char argumento[])
     char car;
     int k;
     long retorno=0;
-    if  (argumento[0] >= '0' && argumento[0] <= '9') //Es decimal
+    if  (argumento[0] >= '0' && argumento[0] <= '9' || argumento[0]=='-') //Es decimal
         retorno = atoi(argumento);
     else
         if (argumento[0] == '#') //Es decimal
