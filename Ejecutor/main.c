@@ -182,7 +182,7 @@
                 printf("\n");
                 printf("Cantidad total de procesos = %d \n",ram[0]);
                 printf("Cantidad de procesos finalizados correctamente = %d \n",ram[1]);
-                for(i=0;i<ram[1];i++){
+                for(i=0;i<ram[0];i++){
                     printf("Proceso %d:\n",i+1);
                     printf("PS = %ld | CS = %ld | DS = %ld | ES = %ld \n",ram[16 * i +2],ram[16 * i +2+1],ram[16 * i +2+2],ram[16 * i +2+3]);
                     printf("IP = %ld | SS = %ld | SP = %ld | BP = %ld \n",ram[16 * i +2+4],ram[16 * i +2+5],ram[16 * i +2+6],ram[16 * i +2+7]);
@@ -204,7 +204,7 @@
             {
                 celda1 = ram[cCelda];
                 cCelda++;
-                if((celda1 & 0xFFFF0000)==0x00){
+                if((celda1 & 0xFFFF0000)==-1){
                     cCelda = reg[2]+1;
                 }
                 else{
