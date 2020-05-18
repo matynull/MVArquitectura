@@ -18,6 +18,7 @@
         }
     }
 
+
     void pop(long int *op1, long int *op2, long int reg[], long int ram[], int flags[], int *error, char * muestraD[])
     {
         if(reg[6]+reg[5]< reg[1] + reg[0])
@@ -649,7 +650,7 @@ void sys(long int *op1, long int *op2, long int reg[], long int ram[], int flags
                     v2=v1;
                 for (i=v1; i<=v2; i++)
                 {
-                    if (ram[reg[2]+i]>=0x21 && ram[i]<=0x7E)
+                    if (ram[reg[2]+i]>=0x21 && ram[reg[2]+i]<=0x7E)
                         caracter=ram[reg[2]+i];
                     else
                         caracter='.';
