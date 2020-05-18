@@ -283,15 +283,12 @@ void primeraPasada(FILE* archEnt, TRotulo rotulos[], int* contRotulos, TConstant
                             }
                             else //El argumento 2 no es un String
                             {
-                                if (token[0] != '/')
-                                {
-                                    token = strtok(aux3," \t\n,/");
-                                    if (token != NULL && token[0] != '/')
-                                        if (token[0] == '\'') //Si el argumento es un caracter ASCII es case sensitive
-                                            strcpy(instrucciones[(*contLinea)-1].arg2,token);
-                                        else
-                                            strcpy(instrucciones[(*contLinea)-1].arg2,strupr(token));
-                                }
+                                token = strtok(aux3," \t\n,/");
+                                if (token != NULL && token[0] != '/')
+                                    if (token[0] == '\'') //Si el argumento es un caracter ASCII es case sensitive
+                                        strcpy(instrucciones[(*contLinea)-1].arg2,token);
+                                    else
+                                        strcpy(instrucciones[(*contLinea)-1].arg2,strupr(token));
                             }
                         }
                     }
