@@ -205,19 +205,25 @@ void primeraPasada(FILE* archEnt, TRotulo rotulos[], int* contRotulos, TConstant
                 while(token != NULL && token[0] != '/')
                 {
                     token = strtok(NULL," \t=");
-                    auxReg = token[0];
-                    token = strtok(NULL," \t=");
-                    switch (auxReg)
+                    if (token != NULL)
                     {
-                        case 'D':
-                            DATA = atoi(token);
-                            break;
-                        case 'E':
-                            EXTRA = atoi(token);
-                            break;
-                        case 'S':
-                            STACK = atoi(token);
-                            break;
+                        auxReg = token[0];
+                        token = strtok(NULL," \t=");
+                        if (token != NULL)
+                        {
+                            switch (auxReg)
+                            {
+                                case 'D':
+                                    DATA = atoi(token);
+                                    break;
+                                case 'E':
+                                    EXTRA = atoi(token);
+                                    break;
+                                case 'S':
+                                    STACK = atoi(token);
+                                    break;
+                            }
+                        }
                     }
                 }
             }
