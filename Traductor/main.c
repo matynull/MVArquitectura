@@ -39,9 +39,9 @@ int main(int argc, char *argv[])
 {
     TRegistros registros = {0};
     TRam ram = {0};
-    TRotulo rotulos[100];
-    TInstruccionTexto instruccionesTexto[100];
-    TConstante constantes[30];
+    TRotulo rotulos[500];
+    TInstruccionTexto instruccionesTexto[500];
+    TConstante constantes[500];
     char* mnemonicos[255];
     char* indiceRegistros[16];
     long codMaq;
@@ -253,7 +253,7 @@ void primeraPasada(FILE* archEnt, TRotulo rotulos[], int* contRotulos, TConstant
                         {
                             rotulos[*contRotulos].linea = (*contLinea);
                             strcpy(rotulos[*contRotulos].rotulo,strupr(token));
-                            (*contRotulos)++;
+                            (*contRotulos) += 1;
                         }
                     }
                     token = strtok(NULL," \t\n,"); //Se lee el mnemonico
